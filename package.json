@@ -9,6 +9,6 @@
     "hubot-gitter2": "^0.1.3"
   },
   "engines": {
-    "node": "0.10.x"
+    "node": "6.0.x"
   }
 }
