@@ -274,7 +274,7 @@ module.exports = (robot) => {
         .entries();
       let lines = [...entries]
         .sort((a, b) => a < b ? -1 : a > b ? 1 : 0)
-        .map(([name, count]) => `${("000" + count).slice(-3)}回 : ${name}`);
+        .map(([name, count]) => printf("%03d回 : %s", count, name));
       lines.push("\n", readingVimrc.startLink);
       res.send(lines.join("\n"));
     }
