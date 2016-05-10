@@ -5,6 +5,7 @@
 
 const YAML = require("js-yaml");
 const Octokat = new (require("octokat"))();
+const printf = require("printf");
 
 const ROOM_NAME = process.env.HUBOT_READING_VIMRC_ROOM_NAME || "vim-jp/reading-vimrc";
 const ADMIN_USERS = (process.env.HUBOT_READING_VIMRC_ADMIN_USERS || "").split(/,/);
@@ -16,6 +17,7 @@ class ReadingVimrc {
     this.messages = [];
     this.vimrcs = [];
     this.isRunning = false;
+    this.vimrcContents = new Map();
   }
 
   get status() {
@@ -52,6 +54,26 @@ class ReadingVimrc {
       return;
     }
     this.messages.push(message);
+  }
+
+  setVimrcContent(name, content) {
+    this.vimrcContents.set(name, content.split(/\r?\n/));
+  }
+
+  getVimrcLines(name, startLine, endLine = startLine) {
+    let keys = [...this.vimrcContents.keys()];
+    let key;
+    if (name) {
+      let reg = new RegExp(name, "i");
+      key = keys.find((k) => reg.test(k));
+    } else {
+      key = keys[0];
+    }
+    if (!this.vimrcContents.has(key)) {
+      return null;
+    }
+    let content = this.vimrcContents.get(key);
+    return content.slice(startLine - 1, endLine);
   }
 
   help() {
@@ -188,10 +210,25 @@ module.exports = (robot) => {
       readingVimrc.add(res.message);
     }
   });
+  robot.hear(/^(?:(\S+)\s+)?L(\d+)(?:-L?(\d+))?\s/, (res) => {
+    let [, name, startLine, endLine] = res.match;
+    startLine = Number.parseInt(startLine);
+    endLine = endLine ? Number.parseInt(endLine) : undefined;
+    let lines = readingVimrc.getVimrcLines(name, startLine, endLine);
+    if (lines) {
+      let body = lines.map((line, n) => printf("%4d | %s", n + startLine, line)).join("\n");
+      res.send("```\n" + body + "\n```");
+    }
+  });
   robot.hear(/^!reading_vimrc[\s]+start(?:_reading_vimrc)?$/i, {admin: true}, (res) => {
     getNextYAML(robot).then((nextData) => {
       let link = makeGitterLink(ROOM_NAME, res.envelope.message);
       Promise.all(nextData.vimrcs.map(toGithubLink)).then((vimrcs) => {
+        vimrcs.forEach((vimrc) => {
+          robot.http(vimrc.raw_link).get()((err, httpRes, body) => {
+            readingVimrc.setVimrcContent(vimrc.raw_link, body);
+          });
+        });
         readingVimrc.start(nextData.id, link, vimrcs);
         res.send(readingVimrc.startingMessage(nextData, vimrcs));
       });
