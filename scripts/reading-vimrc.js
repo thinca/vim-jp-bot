@@ -25,7 +25,7 @@ class ReadingVimrc {
   }
 
   get members() {
-    return [...new Set(this.messages.map((mes) => mes.user.name)).values()];
+    return [...new Set(this.messages.map((mes) => mes.user.login)).values()];
   }
 
   start(id, link, vimrcs) {
@@ -179,7 +179,7 @@ function getNextYAML(robot) {
 }
 
 function isAdmin(user) {
-  return ADMIN_USERS.includes(user.name);
+  return ADMIN_USERS.includes(user.login);
 }
 
 module.exports = (robot) => {
@@ -266,7 +266,7 @@ module.exports = (robot) => {
       res.send("だれもいませんでした");
     } else {
       let entries = messages
-        .map((mes) => mes.user.name)
+        .map((mes) => mes.user.login)
         .reduce((map, currentValue) => {
           map.set(currentValue, (map.get(currentValue) || 0) + 1);
           return map;
