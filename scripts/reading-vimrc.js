@@ -178,7 +178,7 @@ function getNextYAML(robot) {
 }
 
 function isAdmin(user) {
-  return ADMIN_USERS.includes(user.login);
+  return ADMIN_USERS.includes(user.login || user.name);  // user.name for shell adapter
 }
 
 module.exports = (robot) => {
