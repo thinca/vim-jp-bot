@@ -235,7 +235,7 @@ module.exports = (robot) => {
   });
   robot.hear(/^!reading_vimrc\s+stop$/, {admin: true}, (res) => {
     readingVimrc.stop();
-    res.send("stopped");
+    res.send("おつかれさまでした。次回読む vimrc を決めましょう！\nhttps://github.com/vim-jp/reading-vimrc/wiki/Request");
   });
   robot.hear(/^!reading_vimrc\s+reset$/, {admin: true}, (res) => {
     readingVimrc.reset();
