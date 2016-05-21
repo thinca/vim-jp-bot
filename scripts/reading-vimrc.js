@@ -216,7 +216,7 @@ module.exports = (robot) => {
     let lines = readingVimrc.getVimrcLines(name, startLine, endLine);
     if (lines) {
       let body = lines.map((line, n) => printf("%4d | %s", n + startLine, line)).join("\n");
-      res.send("```\n" + body + "\n```");
+      res.send("```vim\n" + body + "\n```");
     }
   });
   robot.hear(/^!reading_vimrc[\s]+start(?:_reading_vimrc)?$/i, {admin: true}, (res) => {
