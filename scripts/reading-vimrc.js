@@ -60,19 +60,22 @@ class ReadingVimrc {
     this.vimrcContents.set(name, content.split(/\r?\n/));
   }
 
-  getVimrcLines(name, startLine, endLine = startLine) {
+  getVimrcFile(namePat) {
     let keys = [...this.vimrcContents.keys()];
     let key;
-    if (name) {
-      let reg = new RegExp(name, "i");
+    if (namePat) {
+      let reg = new RegExp(namePat, "i");
       key = keys.find((k) => reg.test(k));
     } else {
       key = keys[0];
     }
     if (!this.vimrcContents.has(key)) {
-      return null;
+      return [];
     }
-    let content = this.vimrcContents.get(key);
+    return [key, this.vimrcContents.get(key)];
+  }
+
+  getVimrcLines(content, startLine, endLine = startLine) {
     return content.slice(startLine - 1, endLine);
   }
 
@@ -209,15 +212,38 @@ module.exports = (robot) => {
       readingVimrc.add(res.message);
     }
   });
-  robot.hear(/^(?:(\S+)\s+)?L(\d+)(?:-L?(\d+))?\s/, (res) => {
-    let [, name, startLine, endLine] = res.match;
-    startLine = Number.parseInt(startLine);
-    endLine = endLine ? Number.parseInt(endLine) : undefined;
-    let lines = readingVimrc.getVimrcLines(name, startLine, endLine);
-    if (lines) {
-      let body = lines.map((line, n) => printf("%4d | %s", n + startLine, line)).join("\n");
-      res.send("```vim\n" + body + "\n```");
+  robot.hear(/^(?:(\S+)\s+)??((?:L\d+(?:-L?\d+)?(?:,L?\d+(?:-L?\d+)?)*\s+)+)/, (res) => {
+    if (!readingVimrc.isRunning) {
+      return;
     }
+    let [, name, linesInfo] = res.match;
+    let [url, content] = readingVimrc.getVimrcFile(name);
+    if (!content) {
+      if (name != null) {
+        res.send(`File not found: ${name}`);
+      }
+      return;
+    }
+    let text = linesInfo.split(/[\s,]+/)
+      .map((info) => info.match(/L?(\d+)(?:-L?(\d+))?/))
+      .filter((matchResult) => matchResult != null)
+      .map((matchResult) => {
+        let [startLine, endLine] =
+          matchResult
+            .slice(1, 3)
+            .filter((l) => l != null)
+            .map((l) => Number.parseInt(l));
+        let lines = readingVimrc.getVimrcLines(content, startLine, endLine);
+        if (lines.length === 0) {
+          return `無効な範囲です: ${matchResult[0]}`;
+        }
+        let code = lines.map((line, n) => printf("%4d | %s", n + startLine, line)).join("\n");
+        return "```vim\n" + code + "\n```";
+      }).join("\n");
+    if (name) {
+      text = `${url}\n${text}`;
+    }
+    res.send(text);
   });
   robot.hear(/^!reading_vimrc[\s]+start(?:_reading_vimrc)?$/i, {admin: true}, (res) => {
     getNextYAML(robot).then((nextData) => {
