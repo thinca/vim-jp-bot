@@ -196,23 +196,24 @@ module.exports = (robot) => {
   robot.listenerMiddleware((context, next, done) => {
     let user = context.response.envelope.user;
     let room = context.response.envelope.room;
+    let options = context.listener.options;
 
-    if (context.listener.options.admin && !isAdmin(user)) {
+    if (options.readingVimrc && room !== targetRoomId) {
       done();
       return;
     }
-    if (room === targetRoomId) {
-      next();
-    } else {
+    if (options.admin && !isAdmin(user)) {
       done();
+      return;
     }
+    next();
   });
-  robot.hear(/.*/i, (res) => {
+  robot.hear(/.*/i, {readingVimrc: true}, (res) => {
     if (!(/^!reading_vimrc/.test(res.message.text))) {
       readingVimrc.add(res.message);
     }
   });
-  robot.hear(/^(?:(\S+)\s+)??((?:L\d+(?:-L?\d+)?(?:,L?\d+(?:-L?\d+)?)*\s+)+)/, (res) => {
+  robot.hear(/^(?:(\S+)\s+)??((?:L\d+(?:-L?\d+)?(?:,L?\d+(?:-L?\d+)?)*\s+)+)/, {readingVimrc: true}, (res) => {
     if (!readingVimrc.isRunning) {
       return;
     }
@@ -245,7 +246,7 @@ module.exports = (robot) => {
     }
     res.send(text);
   });
-  robot.hear(/^!reading_vimrc[\s]+start(?:_reading_vimrc)?$/i, {admin: true}, (res) => {
+  robot.hear(/^!reading_vimrc[\s]+start(?:_reading_vimrc)?$/i, {readingVimrc: true, admin: true}, (res) => {
     getNextYAML(robot).then((nextData) => {
       let link = makeGitterLink(ROOM_NAME, res.envelope.message);
       Promise.all(nextData.vimrcs.map(toGithubLink)).then((vimrcs) => {
@@ -259,22 +260,22 @@ module.exports = (robot) => {
       });
     });
   });
-  robot.hear(/^!reading_vimrc\s+stop$/, {admin: true}, (res) => {
+  robot.hear(/^!reading_vimrc\s+stop$/, {readingVimrc: true, admin: true}, (res) => {
     readingVimrc.stop();
     res.send("おつかれさまでした。次回読む vimrc を決めましょう！\nhttps://github.com/vim-jp/reading-vimrc/wiki/Request");
   });
-  robot.hear(/^!reading_vimrc\s+reset$/, {admin: true}, (res) => {
+  robot.hear(/^!reading_vimrc\s+reset$/, {readingVimrc: true, admin: true}, (res) => {
     readingVimrc.reset();
     res.send("reset");
   });
-  robot.hear(/^!reading_vimrc\s+restore$/, {admin: true}, (res) => {
+  robot.hear(/^!reading_vimrc\s+restore$/, {readingVimrc: true, admin: true}, (res) => {
     readingVimrc.restore();
     res.send("restored");
   });
-  robot.hear(/^!reading_vimrc\s+status$/, (res) => {
+  robot.hear(/^!reading_vimrc\s+status$/, {readingVimrc: true}, (res) => {
     res.send(readingVimrc.status);
   });
-  robot.hear(/^!reading_vimrc\s+members?$/, (res) => {
+  robot.hear(/^!reading_vimrc\s+members?$/, {readingVimrc: true}, (res) => {
     let members = readingVimrc.members;
     if (members.length === 0) {
       res.send("だれもいませんでした");
@@ -285,7 +286,7 @@ module.exports = (robot) => {
       res.send(lines.join("\n"));
     }
   });
-  robot.hear(/^!reading_vimrc\s+members?_with_count$/, (res) => {
+  robot.hear(/^!reading_vimrc\s+members?_with_count$/, {readingVimrc: true}, (res) => {
     let messages = readingVimrc.messages;
     if (messages.length === 0) {
       res.send("だれもいませんでした");
@@ -304,7 +305,7 @@ module.exports = (robot) => {
       res.send(lines.join("\n"));
     }
   });
-  robot.hear(/^!reading_vimrc\s+help/, (res) => {
+  robot.hear(/^!reading_vimrc\s+help/, {readingVimrc: true}, (res) => {
     res.send(readingVimrc.help());
   });
 
