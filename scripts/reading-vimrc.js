@@ -140,7 +140,6 @@ function lastCommitHash(url) {
 }
 
 function toGithubLink(vimrc) {
-  vimrc.hash = undefined;
   let makeLinkData = (hash) => {
     vimrc.hash = hash;
     let link = /blob\/master\//.test(vimrc.url)
