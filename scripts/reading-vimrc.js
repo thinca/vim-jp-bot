@@ -122,11 +122,11 @@ class ReadingVimrc {
 - 今回は${data.part}です。前回参加した人は続きから読みましょう`;
       }
       return "";
-    })()}${
+    })()}
+今回読む vimrc:${
       vimrcs.map((vimrc) => `
-${vimrc.name}: ${vimrc.link}
-DL用リンク: ${vimrc.raw_link}`
-                ).join("\n")
+[${vimrc.name}](${vimrc.link}) ([DL](${vimrc.raw_link}))`
+                ).join("")
     }`;
   }
 }
