@@ -66,8 +66,17 @@ class ReadingVimrc {
     let keys = [...this.vimrcContents.keys()];
     let key;
     if (namePat) {
-      let reg = new RegExp(namePat, "i");
-      key = keys.find((k) => reg.test(k));
+      key = [
+        `^${namePat}$`,
+        `/${namePat}(?:\..*)?$`,
+        namePat
+      ].reduce((k, pat) => {
+        if (!k) {
+          let reg = new RegExp(pat, "i");
+          k = keys.find((k) => reg.test(k));
+        }
+        return k;
+      }, null);
     } else {
       key = keys[0];
     }
