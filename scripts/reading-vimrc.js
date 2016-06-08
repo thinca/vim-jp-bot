@@ -3,6 +3,7 @@
 //   http://vim-jp.org/reading-vimrc/
 //
 
+const path = require("path");
 const YAML = require("js-yaml");
 const Octokat = new (require("octokat"))();
 const printf = require("printf");
@@ -224,6 +225,7 @@ module.exports = (robot) => {
       }
       return;
     }
+    let filename = path.basename(url);
     let text = linesInfo.split(/[\s,]+/)
       .map((info) => info.match(/L?(\d+)(?:-L?(\d+))?/))
       .filter((matchResult) => matchResult != null)
@@ -237,12 +239,14 @@ module.exports = (robot) => {
         if (lines.length === 0) {
           return `無効な範囲です: ${matchResult[0]}`;
         }
+        let fragment = `#L${startLine}`;
+        if (endLine) {
+          fragment += `-L${endLine}`;
+        }
+        let headUrl = `[${filename}${fragment}](${url}${fragment})`;
         let code = lines.map((line, n) => printf("%4d | %s", n + startLine, line)).join("\n");
-        return "```vim\n" + code + "\n```";
+        return headUrl + "\n```vim\n" + code + "\n```";
       }).join("\n");
-    if (name) {
-      text = `${url}\n${text}`;
-    }
     res.send(text);
   });
   robot.hear(/^!reading_vimrc[\s]+start(?:_reading_vimrc)?$/i, {readingVimrc: true, admin: true}, (res) => {
@@ -251,7 +255,7 @@ module.exports = (robot) => {
       Promise.all(nextData.vimrcs.map(toGithubLink)).then((vimrcs) => {
         vimrcs.forEach((vimrc) => {
           robot.http(vimrc.raw_link).get()((err, httpRes, body) => {
-            readingVimrc.setVimrcContent(vimrc.raw_link, body);
+            readingVimrc.setVimrcContent(vimrc.link, body);
           });
         });
         readingVimrc.start(nextData.id, link, vimrcs);
