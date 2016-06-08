@@ -29,12 +29,13 @@ class ReadingVimrc {
     return [...new Set(this.messages.map((mes) => mes.user.login)).values()];
   }
 
-  start(id, link, vimrcs) {
+  start(id, link, vimrcs, part) {
     this.id = id;
     this.startLink = link;
     this.vimrcs = vimrcs;
     this.messages = [];
     this.isRunning = true;
+    this.part = part;
   }
 
   stop() {
@@ -258,14 +259,18 @@ module.exports = (robot) => {
             readingVimrc.setVimrcContent(vimrc.link, body);
           });
         });
-        readingVimrc.start(nextData.id, link, vimrcs);
+        readingVimrc.start(nextData.id, link, vimrcs, nextData.part);
         res.send(readingVimrc.startingMessage(nextData, vimrcs));
       });
     });
   });
   robot.hear(/^!reading_vimrc\s+stop$/, {readingVimrc: true, admin: true}, (res) => {
     readingVimrc.stop();
-    res.send("おつかれさまでした。次回読む vimrc を決めましょう！\nhttps://github.com/vim-jp/reading-vimrc/wiki/Request");
+    if (!readingVimrc.part || readingVimrc.part === "後編") {
+      res.send("おつかれさまでした。次回読む vimrc を決めましょう！\nhttps://github.com/vim-jp/reading-vimrc/wiki/Request");
+    } else {
+      res.send("おつかれさまでした。次回は続きを読むので、どこまで読んだか覚えておきましょう！");
+    }
   });
   robot.hear(/^!reading_vimrc\s+reset$/, {readingVimrc: true, admin: true}, (res) => {
     readingVimrc.reset();
