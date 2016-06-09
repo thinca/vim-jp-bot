@@ -240,7 +240,7 @@ module.exports = (robot) => {
       readingVimrc.add(res.message);
     }
   });
-  robot.hear(/^(?:(\S+)\s+)??((?:L\d+(?:-L?\d+)?(?:,L?\d+(?:-L?\d+)?)*\s+)+)/, {readingVimrc: true}, (res) => {
+  robot.hear(/^(?:(\S+)\s+)??(L\d+(?:-L?\d+)?(?:(?:\s+L|,L?)\d+(?:-L?\d+)?)*)/, {readingVimrc: true}, (res) => {
     if (!readingVimrc.isRunning) {
       return;
     }
