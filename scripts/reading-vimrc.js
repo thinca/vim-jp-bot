@@ -5,7 +5,6 @@
 
 const path = require("path");
 const YAML = require("js-yaml");
-const Octokat = new (require("octokat"))();
 const printf = require("printf");
 
 const ROOM_NAME = process.env.HUBOT_READING_VIMRC_ROOM_NAME || "vim-jp/reading-vimrc";
@@ -142,15 +141,23 @@ class ReadingVimrc {
   }
 }
 
-function lastCommitHash(url) {
+function lastCommitHash(url, robot) {
   let [, username, reponame] = url.match(/https:\/\/github\.com\/([^/]+)\/([^/]+)/);
-  let repo = Octokat.repos(username, reponame);
-  return repo.commits.fetch().then((value) => {
-    return value.items[0].sha;
+  let apiUrl = `https://api.github.com/repos/${username}/${reponame}/commits/HEAD`;
+  return new Promise((resolve, reject) => {
+    robot.http(apiUrl)
+      .header("Accept", "application/vnd.github.VERSION.sha")
+      .get()((err, res, body) => {
+        if (err) {
+          reject(err);
+          return;
+        }
+        resolve(body);
+      });
   });
 }
 
-function toGithubLink(vimrc) {
+function toGithubLink(vimrc, robot) {
   let makeLinkData = (hash) => {
     vimrc.hash = hash;
     let link = /blob\/master\//.test(vimrc.url)
@@ -170,7 +177,7 @@ function toGithubLink(vimrc) {
   if (vimrc.hash) {
     return Promise.resolve(makeLinkData(vimrc.hash));
   } else {
-    return lastCommitHash(vimrc.url).then(makeLinkData);
+    return lastCommitHash(vimrc.url, robot).then(makeLinkData);
   }
 }
 
@@ -262,7 +269,7 @@ module.exports = (robot) => {
   robot.hear(/^!reading_vimrc[\s]+start(?:_reading_vimrc)?$/i, {readingVimrc: true, admin: true}, (res) => {
     getNextYAML(robot).then((nextData) => {
       let link = makeGitterLink(ROOM_NAME, res.envelope.message);
-      Promise.all(nextData.vimrcs.map(toGithubLink)).then((vimrcs) => {
+      Promise.all(nextData.vimrcs.map((vimrc) => toGithubLink(vimrc, robot))).then((vimrcs) => {
         vimrcs.forEach((vimrc) => {
           robot.http(vimrc.raw_link).get()((err, httpRes, body) => {
             readingVimrc.setVimrcContent(vimrc.link, body);
