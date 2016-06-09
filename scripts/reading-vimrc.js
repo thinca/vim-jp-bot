@@ -141,21 +141,31 @@ class ReadingVimrc {
   }
 }
 
-function lastCommitHash(url, robot) {
-  let [, username, reponame] = url.match(/https:\/\/github\.com\/([^/]+)\/([^/]+)/);
-  let apiUrl = `https://api.github.com/repos/${username}/${reponame}/commits/HEAD`;
-  return new Promise((resolve, reject) => {
-    robot.http(apiUrl)
-      .header("Accept", "application/vnd.github.VERSION.sha")
-      .get()((err, res, body) => {
-        if (err) {
-          reject(err);
-          return;
-        }
-        resolve(body);
-      });
-  });
-}
+let lastCommitHash = (() => {
+  // XXX: Should cache expire?
+  let hashes = new Map();
+  return (url, robot) => {
+    let [, place] = url.match(/https:\/\/github\.com\/([^/]+\/[^/]+)/);
+    // XXX Should `hashes` lock? How?
+    if (hashes.has(place)) {
+      return hashes.get(place);
+    }
+    let apiUrl = `https://api.github.com/repos/${place}/commits/HEAD`;
+    let p = new Promise((resolve, reject) => {
+      robot.http(apiUrl)
+        .header("Accept", "application/vnd.github.VERSION.sha")
+        .get()((err, res, body) => {
+          if (err) {
+            reject(err);
+            return;
+          }
+          resolve(body);
+        });
+    });
+    hashes.set(place, p);
+    return p;
+  };
+})();
 
 function toGithubLink(vimrc, robot) {
   let makeLinkData = (hash) => {
