@@ -42,6 +42,7 @@ class ReadingVimrc {
     this.vimrcs = [];
     this.isRunning = false;
     this.vimrcContents = new Map();
+    this.vimrcLastname = new Map();
   }
 
   get status() {
@@ -86,7 +87,7 @@ class ReadingVimrc {
     this.vimrcContents.set(name, content.split(/\r?\n/));
   }
 
-  getVimrcFile(namePat) {
+  getVimrcFile(namePat, username) {
     const names = [...this.vimrcContents.keys()];
     let name;
     if (namePat) {
@@ -101,11 +102,16 @@ class ReadingVimrc {
         }
         return k;
       }, null);
+    } else if (this.vimrcLastname.has(username)) {
+      name = this.vimrcLastname.get(username);
     } else {
       name = names[0];
     }
     if (!this.vimrcContents.has(name)) {
       return [];
+    }
+    if (username) {
+      this.vimrcLastname.set(username, name);
     }
     return [name, this.vimrcContents.get(name)];
   }
@@ -116,6 +122,7 @@ class ReadingVimrc {
 
   clearVimrcs() {
     this.vimrcContents.clear();
+    this.vimrcLastname.clear();
   }
 
   help() {
@@ -272,7 +279,8 @@ module.exports = (robot) => {
       return;
     }
     const [, name, linesInfo] = res.match;
-    const [url, content] = readingVimrc.getVimrcFile(name);
+    const username = res.envelope.user.login || res.envelope.user.name;
+    const [url, content] = readingVimrc.getVimrcFile(name, username);
     if (!content) {
       if (name != null) {
         res.send(`File not found: ${name}`);
