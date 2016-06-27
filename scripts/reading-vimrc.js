@@ -303,7 +303,7 @@ module.exports = (robot) => {
       }).join("\n");
     res.send(text);
   });
-  robot.hear(/^!reading_vimrc[\s]+start(?:_reading_vimrc)?$/i, {readingVimrc: true, admin: true}, (res) => {
+  robot.hear(/^!reading_vimrc[\s]+start$/i, {readingVimrc: true, admin: true}, (res) => {
     getNextYAML(robot).then((nextData) => {
       const link = makeGitterLink(ROOM_NAME, res.envelope.message);
       Promise.all(nextData.vimrcs.map((vimrc) => toGithubLink(vimrc, robot))).then((vimrcs) => {
