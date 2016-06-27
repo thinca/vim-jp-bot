@@ -63,7 +63,7 @@ class ReadingVimrc {
   }
 
   getVimrcFile(namePat) {
-    let keys = [...this.vimrcContents.keys()];
+    const keys = [...this.vimrcContents.keys()];
     let key;
     if (namePat) {
       key = [
@@ -146,17 +146,17 @@ class ReadingVimrc {
   }
 }
 
-let lastCommitHash = (() => {
+const lastCommitHash = (() => {
   // XXX: Should cache expire?
-  let hashes = new Map();
+  const hashes = new Map();
   return (url, robot) => {
-    let [, place] = url.match(/https:\/\/github\.com\/([^/]+\/[^/]+)/);
+    const [, place] = url.match(/https:\/\/github\.com\/([^/]+\/[^/]+)/);
     // XXX Should `hashes` lock? How?
     if (hashes.has(place)) {
       return hashes.get(place);
     }
-    let apiUrl = `https://api.github.com/repos/${place}/commits/HEAD`;
-    let p = new Promise((resolve, reject) => {
+    const apiUrl = `https://api.github.com/repos/${place}/commits/HEAD`;
+    const p = new Promise((resolve, reject) => {
       robot.http(apiUrl)
         .header("Accept", "application/vnd.github.VERSION.sha")
         .get()((err, res, body) => {
@@ -173,12 +173,12 @@ let lastCommitHash = (() => {
 })();
 
 function toGithubLink(vimrc, robot) {
-  let makeLinkData = (hash) => {
+  const makeLinkData = (hash) => {
     vimrc.hash = hash;
-    let link = /blob\/master\//.test(vimrc.url)
+    const link = /blob\/master\//.test(vimrc.url)
       ? vimrc.url.replace(/blob\/master\//, `blob/${hash}/`)
       : `${vimrc.url}/tree/${hash}`;
-    let raw_link = vimrc.url
+    const raw_link = vimrc.url
       .replace(/https:\/\/github/, "https://raw.githubusercontent")
       .replace(/blob\/master\//, `${hash}/`);
     return {
@@ -217,7 +217,7 @@ function isAdmin(user) {
 }
 
 module.exports = (robot) => {
-  let readingVimrc = new ReadingVimrc();
+  const readingVimrc = new ReadingVimrc();
   let targetRoomId = 'Shell';  // for shell adapter on debug
   if (robot.adapterName === "gitter2") {
     robot.adapter._resolveRoom(ROOM_NAME, (room) => {
@@ -226,9 +226,9 @@ module.exports = (robot) => {
   }
 
   robot.listenerMiddleware((context, next, done) => {
-    let user = context.response.envelope.user;
-    let room = context.response.envelope.room;
-    let options = context.listener.options;
+    const user = context.response.envelope.user;
+    const room = context.response.envelope.room;
+    const options = context.listener.options;
 
     if (options.readingVimrc && room !== targetRoomId) {
       done();
@@ -249,25 +249,25 @@ module.exports = (robot) => {
     if (!readingVimrc.isRunning) {
       return;
     }
-    let [, name, linesInfo] = res.match;
-    let [url, content] = readingVimrc.getVimrcFile(name);
+    const [, name, linesInfo] = res.match;
+    const [url, content] = readingVimrc.getVimrcFile(name);
     if (!content) {
       if (name != null) {
         res.send(`File not found: ${name}`);
       }
       return;
     }
-    let filename = path.basename(url);
-    let text = linesInfo.split(/[\s,]+/)
+    const filename = path.basename(url);
+    const text = linesInfo.split(/[\s,]+/)
       .map((info) => info.match(/L?(\d+)(?:-L?(\d+))?/))
       .filter((matchResult) => matchResult != null)
       .map((matchResult) => {
-        let [startLine, endLine] =
+        const [startLine, endLine] =
           matchResult
             .slice(1, 3)
             .filter((l) => l != null)
             .map((l) => Number.parseInt(l));
-        let lines = readingVimrc.getVimrcLines(content, startLine, endLine);
+        const lines = readingVimrc.getVimrcLines(content, startLine, endLine);
         if (lines.length === 0) {
           return `無効な範囲です: ${matchResult[0]}`;
         }
@@ -275,15 +275,15 @@ module.exports = (robot) => {
         if (endLine) {
           fragment += `-L${endLine}`;
         }
-        let headUrl = `[${filename}${fragment}](${url}${fragment})`;
-        let code = lines.map((line, n) => printf("%4d | %s", n + startLine, line)).join("\n");
+        const headUrl = `[${filename}${fragment}](${url}${fragment})`;
+        const code = lines.map((line, n) => printf("%4d | %s", n + startLine, line)).join("\n");
         return headUrl + "\n```vim\n" + code + "\n```";
       }).join("\n");
     res.send(text);
   });
   robot.hear(/^!reading_vimrc[\s]+start(?:_reading_vimrc)?$/i, {readingVimrc: true, admin: true}, (res) => {
     getNextYAML(robot).then((nextData) => {
-      let link = makeGitterLink(ROOM_NAME, res.envelope.message);
+      const link = makeGitterLink(ROOM_NAME, res.envelope.message);
       Promise.all(nextData.vimrcs.map((vimrc) => toGithubLink(vimrc, robot))).then((vimrcs) => {
         readingVimrc.start(nextData.id, link, vimrcs, nextData.part);
         vimrcs.forEach((vimrc) => {
@@ -315,29 +315,29 @@ module.exports = (robot) => {
     res.send(readingVimrc.status);
   });
   robot.hear(/^!reading_vimrc\s+members?$/, {readingVimrc: true}, (res) => {
-    let members = readingVimrc.members;
+    const members = readingVimrc.members;
     if (members.length === 0) {
       res.send("だれもいませんでした");
     } else {
-      let lines = members;
+      const lines = members;
       lines.sort();
       lines.push("\n", readingVimrc.startLink);
       res.send(lines.join("\n"));
     }
   });
   robot.hear(/^!reading_vimrc\s+members?_with_count$/, {readingVimrc: true}, (res) => {
-    let messages = readingVimrc.messages;
+    const messages = readingVimrc.messages;
     if (messages.length === 0) {
       res.send("だれもいませんでした");
     } else {
-      let entries = messages
+      const entries = messages
         .map((mes) => mes.user.login)
         .reduce((map, currentValue) => {
           map.set(currentValue, (map.get(currentValue) || 0) + 1);
           return map;
         }, new Map())
         .entries();
-      let lines = [...entries]
+      const lines = [...entries]
         .sort((a, b) => a < b ? -1 : a > b ? 1 : 0)
         .map(([name, count]) => printf("%03d回 : %s", count, name));
       lines.push("\n", readingVimrc.startLink);
