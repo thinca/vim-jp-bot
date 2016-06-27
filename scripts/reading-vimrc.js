@@ -2,6 +2,30 @@
 //   Supports reading vimrc.
 //   http://vim-jp.org/reading-vimrc/
 //
+// Dependencies:
+//   js-yaml: 3.6.0
+//   printf: 0.2.3
+//
+// Configuration:
+//   HUBOT_READING_VIMRC_ROOM_NAME
+//     Target room name.
+//     This script works only on the specified room.
+//   HUBOT_READING_VIMRC_ADMIN_USERS
+//     Admin users.  This is comma separated list.
+//     Some commands can be executed by admin users only.
+//
+// Commands:
+//   !reading_vimrc start - Start the reading vimrc.  Admin only.
+//   !reading_vimrc stop - Stop the reading vimrc.  Admin only.
+//   !reading_vimrc reset - Reset the members of current reading vimrc.  Admin only.
+//   !reading_vimrc restore - Restore the members.
+//   !reading_vimrc status - Show the status(started or stopped).
+//   !reading_vimrc member - List the members of current reading vimrc.
+//   !reading_vimrc member_with_count - List of members with said count.
+//   !reading_vimrc help - Show the help.
+//
+// Author:
+//   thinca <thinca+npm@gmail.com>
 
 const path = require("path");
 const YAML = require("js-yaml");
