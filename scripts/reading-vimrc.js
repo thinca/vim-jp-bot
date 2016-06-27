@@ -130,9 +130,7 @@ class ReadingVimrc {
 "status"  : ステータスの出力
 "member"  : "start" ～ "stop" の間に発言した人を列挙
 "member_with_count" : "member" に発言数も追加して列挙
-"help"    : 使い方を出力
-"start"   : vimrc読書会を開始します(owner)
-"start_reading_vimrc" : vimrc読書会を開始します(owner)`;
+"help"    : 使い方を出力`;
   }
 
   startingMessage(data, vimrcs) {
