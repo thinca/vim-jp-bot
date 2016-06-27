@@ -35,6 +35,7 @@ class ReadingVimrc {
     this.messages = [];
     this.isRunning = true;
     this.part = part;
+    this.clearVimrcs();
   }
 
   stop() {
@@ -87,6 +88,10 @@ class ReadingVimrc {
 
   getVimrcLines(content, startLine, endLine = startLine) {
     return content.slice(startLine - 1, endLine);
+  }
+
+  clearVimrcs() {
+    this.vimrcContents.clear();
   }
 
   help() {
@@ -280,12 +285,12 @@ module.exports = (robot) => {
     getNextYAML(robot).then((nextData) => {
       let link = makeGitterLink(ROOM_NAME, res.envelope.message);
       Promise.all(nextData.vimrcs.map((vimrc) => toGithubLink(vimrc, robot))).then((vimrcs) => {
+        readingVimrc.start(nextData.id, link, vimrcs, nextData.part);
         vimrcs.forEach((vimrc) => {
           robot.http(vimrc.raw_link).get()((err, httpRes, body) => {
             readingVimrc.setVimrcContent(vimrc.link, body);
           });
         });
-        readingVimrc.start(nextData.id, link, vimrcs, nextData.part);
         res.send(readingVimrc.startingMessage(nextData, vimrcs));
       });
     });
