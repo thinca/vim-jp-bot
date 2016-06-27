@@ -87,27 +87,27 @@ class ReadingVimrc {
   }
 
   getVimrcFile(namePat) {
-    const keys = [...this.vimrcContents.keys()];
-    let key;
+    const names = [...this.vimrcContents.keys()];
+    let name;
     if (namePat) {
-      key = [
+      name = [
         `^${namePat}$`,
         `/${namePat}(?:\..*)?$`,
         namePat
       ].reduce((k, pat) => {
         if (!k) {
           let reg = new RegExp(pat, "i");
-          k = keys.find((k) => reg.test(k));
+          k = names.find((k) => reg.test(k));
         }
         return k;
       }, null);
     } else {
-      key = keys[0];
+      name = names[0];
     }
-    if (!this.vimrcContents.has(key)) {
+    if (!this.vimrcContents.has(name)) {
       return [];
     }
-    return [key, this.vimrcContents.get(key)];
+    return [name, this.vimrcContents.get(name)];
   }
 
   getVimrcLines(content, startLine, endLine = startLine) {
