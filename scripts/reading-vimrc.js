@@ -7,6 +7,8 @@
 //   printf: 0.2.3
 //
 // Configuration:
+//   HUBOT_READING_VIMRC_ENABLE
+//     Set non-empty value to enable this script.
 //   HUBOT_READING_VIMRC_ROOM_NAME
 //     Target room name.
 //     This script works only on the specified room.
@@ -26,6 +28,11 @@
 //
 // Author:
 //   thinca <thinca+npm@gmail.com>
+
+if (!process.env.HUBOT_READING_VIMRC_ENABLE) {
+  module.exports = () => {};
+  return;
+}
 
 const path = require("path");
 const YAML = require("js-yaml");
