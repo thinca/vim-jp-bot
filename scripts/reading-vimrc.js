@@ -104,7 +104,7 @@ class ReadingVimrc {
         namePat
       ].reduce((k, pat) => {
         if (!k) {
-          let reg = new RegExp(pat, "i");
+          const reg = new RegExp(pat, "i");
           k = names.find((k) => reg.test(k));
         }
         return k;
