@@ -6,7 +6,7 @@
   "description": "A helphul robot for vim-jp",
   "dependencies": {
     "hubot": "^2.18.0",
-    "hubot-gitter2": "github:koron/hubot-gitter2#find-newly-created-user",
+    "hubot-gitter2": "github:huafu/hubot-gitter2",
     "hubot-lingr": "^0.1.1",
     "hubot-vimhelp": "^1.1.0",
     "js-yaml": "^3.6.0",
