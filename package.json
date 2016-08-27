@@ -7,7 +7,7 @@
   "dependencies": {
     "hubot": "^2.18.0",
     "hubot-gitter2": "github:huafu/hubot-gitter2",
-    "hubot-lingr": "^0.1.1",
+    "hubot-lingr": "github:miyagawa/hubot-lingr",
     "hubot-vimhelp": "^1.1.0",
     "js-yaml": "^3.6.0",
     "printf": "^0.2.3"
