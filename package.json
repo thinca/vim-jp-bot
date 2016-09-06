@@ -16,7 +16,7 @@
     "eslint": "^2.9.0"
   },
   "engines": {
-    "node": "6.0.x"
+    "node": ">=6.0.0"
   },
   "private": true,
   "scripts": {
