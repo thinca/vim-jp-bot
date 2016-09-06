@@ -9,7 +9,7 @@
     "hubot-gitter2": "github:huafu/hubot-gitter2",
     "hubot-lingr": "github:miyagawa/hubot-lingr",
     "hubot-slack": "^4.0.2",
-    "hubot-vimhelp": "^1.1.0",
+    "hubot-vimhelp": "^1.1.1",
     "js-yaml": "^3.6.0",
     "printf": "^0.2.3"
   },
