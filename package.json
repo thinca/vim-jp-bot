@@ -1,9 +1,8 @@
 {
   "name": "vim-jp-bot",
-  "version": "0.0.0",
-  "private": true,
-  "author": "thinca <thinca@gmail.com>",
   "description": "A helphul robot for vim-jp",
+  "version": "0.0.0",
+  "author": "thinca <thinca@gmail.com>",
   "dependencies": {
     "hubot": "^2.18.0",
     "hubot-gitter2": "github:huafu/hubot-gitter2",
@@ -13,12 +12,13 @@
     "js-yaml": "^3.6.0",
     "printf": "^0.2.3"
   },
-  "engines": {
-    "node": "6.0.x"
-  },
   "devDependencies": {
     "eslint": "^2.9.0"
   },
+  "engines": {
+    "node": "6.0.x"
+  },
+  "private": true,
   "scripts": {
     "lint": "eslint scripts"
   }
