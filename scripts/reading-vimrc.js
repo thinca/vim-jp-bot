@@ -174,7 +174,7 @@ class ReadingVimrc {
       }
       return "";
     })()}
-今回読む vimrc:${
+今回読む vimrc: [${data.author.name}](${data.author.url}) さん:${
       vimrcs.map((vimrc) => `
 [${vimrc.name}](${vimrc.link}) ([DL](${vimrc.raw_link}))`
                 ).join("")
