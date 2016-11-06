@@ -131,9 +131,9 @@ class ReadingVimrc {
     this.vimrcContents.clear();
     this.vimrcLastname.clear();
   }
+}
 
-  help() {
-    return `vimrc読書会で発言した人を集計するための bot です
+const helpMessage = `vimrc読書会で発言した人を集計するための bot です
 
 !reading_vimrc {command}
 
@@ -145,46 +145,44 @@ class ReadingVimrc {
 "member"  : "start" ～ "stop" の間に発言した人を列挙
 "member_with_count" : "member" に発言数も追加して列挙
 "help"    : 使い方を出力`;
-  }
 
-  startingMessage(data, vimrcs) {
-    return `=== 第${data.id}回 vimrc読書会 ===
+const createStartingMessage = (data, vimrcs) => {
+  return `=== 第${data.id}回 vimrc読書会 ===
 - 途中参加/途中離脱OK。声をかける必要はありません
 - 読む順はとくに決めないので、好きなように読んで好きなように発言しましょう
 - vimrc 内の特定位置を参照する場合は行番号で L100 や L100-110 のように指定します${
-    1 < vimrcs.length ? `
-  - 今回は複数ファイルがあるため、filename#L100 のようにファイル名を指定します
-  - 省略した場合は直前に参照しファイルか、それがない場合は適当なファイルになります` : ""
-      }
+  1 < vimrcs.length ? `
+- 今回は複数ファイルがあるため、filename#L100 のようにファイル名を指定します
+- 省略した場合は直前に参照しファイルか、それがない場合は適当なファイルになります` : ""
+    }
 - 特定の相手に発言/返事する場合は \`@username\` を付けます
 - 一通り読み終わったら、読み終わったことを宣言してください。終了の目安にします
 - ただの目安なので、宣言してからでも読み返して全然OKです${
-    (() => {
-      switch (data.part) {
-        case "前編":
-          return `
+  (() => {
+    switch (data.part) {
+      case "前編":
+        return `
 - 今回は${data.part}です。終了時間になったら、途中でも強制終了します
 - 続きは来週読みます
 - いつも通り各自のペースで読むので、どこまで読んだか覚えておきましょう`;
-        case "中編":
-          return `
+      case "中編":
+        return `
 - 今回は${data.part}です。終了時間になったら、途中でも強制終了します
 - 前回参加していた方は続きから、参加していなかったら最初からになります
 - 続きは来週読みます
 - いつも通り各自のペースで読むので、どこまで読んだか覚えておきましょう`;
-        case "後編":
-          return `
+      case "後編":
+        return `
 - 今回は${data.part}です。前回参加した人は続きから読みましょう`;
-      }
-      return "";
-    })()}
+    }
+    return "";
+  })()}
 今回読む vimrc: [${data.author.name}](${data.author.url}) さん:${
-      vimrcs.map((vimrc) => `
+    vimrcs.map((vimrc) => `
 [${vimrc.name}](${vimrc.link}) ([DL](${vimrc.raw_link}))`
-                ).join("")
-    }`;
-  }
-}
+              ).join("")
+  }`;
+};
 
 const lastCommitHash = (() => {
   // XXX: Should cache expire?
@@ -332,7 +330,7 @@ module.exports = (robot) => {
             readingVimrc.setVimrcContent(vimrc.link, body);
           });
         });
-        res.send(readingVimrc.startingMessage(nextData, vimrcs));
+        res.send(createStartingMessage(nextData, vimrcs));
       });
     });
   });
@@ -386,7 +384,7 @@ module.exports = (robot) => {
     }
   });
   robot.hear(/^!reading_vimrc\s+help/, {readingVimrc: true}, (res) => {
-    res.send(readingVimrc.help());
+    res.send(helpMessage);
   });
 
   robot.router.get("/reading_vimrc/info.yml", (req, res) => {
