@@ -300,14 +300,16 @@ module.exports = (robot) => {
   robot.router.get("/reading_vimrc/info.yml", (req, res) => {
     res.set("Content-Type", "application/x-yaml");
     getNextYAML(robot).then((nextData) => {
-      nextData.members = readingVimrc.members.sort();
-      nextData.log = readingVimrc.startLink;
-      nextData.vimrcs = readingVimrc.vimrcs.map((vimrc) => (
-        {
-          name: vimrc.name,
-          url: vimrc.link,
-          raw_url: vimrc.raw_link
-        }));
+      if (nextData.id === readingVimrc.id) {
+        nextData.members = readingVimrc.members.sort();
+        nextData.log = readingVimrc.startLink;
+        nextData.vimrcs = readingVimrc.vimrcs.map((vimrc) => (
+          {
+            name: vimrc.name,
+            url: vimrc.link,
+            raw_url: vimrc.raw_link
+          }));
+      }
       res.send(YAML.safeDump([nextData], {lineWidth: 1000}));
     });
   });
