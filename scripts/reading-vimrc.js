@@ -307,7 +307,8 @@ module.exports = (robot) => {
           {
             name: vimrc.name,
             url: vimrc.link,
-            raw_url: vimrc.raw_link
+            raw_url: vimrc.raw_link,
+            hash: vimrc.hash
           }));
       }
       res.send(YAML.safeDump([nextData], {lineWidth: 1000}));
