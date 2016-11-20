@@ -94,6 +94,23 @@ const createStartingMessage = (data, vimrcs) => {
   }`;
 };
 
+const generateInfoYAML = (robot, readingVimrc) => {
+  return getNextYAML(robot).then((nextData) => {
+    if (nextData.id === readingVimrc.id) {
+      nextData.members = readingVimrc.members.sort();
+      nextData.log = readingVimrc.startLink;
+      nextData.vimrcs = readingVimrc.vimrcs.map((vimrc) => (
+        {
+          name: vimrc.name,
+          url: vimrc.link,
+          raw_url: vimrc.raw_link,
+          hash: vimrc.hash
+        }));
+    }
+    return YAML.safeDump([nextData], {lineWidth: 1000});
+  });
+};
+
 const lastCommitHash = (() => {
   // XXX: Should cache expire?
   const hashes = new Map();
@@ -299,20 +316,7 @@ module.exports = (robot) => {
 
   robot.router.get("/reading_vimrc/info.yml", (req, res) => {
     res.set("Content-Type", "application/x-yaml");
-    getNextYAML(robot).then((nextData) => {
-      if (nextData.id === readingVimrc.id) {
-        nextData.members = readingVimrc.members.sort();
-        nextData.log = readingVimrc.startLink;
-        nextData.vimrcs = readingVimrc.vimrcs.map((vimrc) => (
-          {
-            name: vimrc.name,
-            url: vimrc.link,
-            raw_url: vimrc.raw_link,
-            hash: vimrc.hash
-          }));
-      }
-      res.send(YAML.safeDump([nextData], {lineWidth: 1000}));
-    });
+    generateInfoYAML(robot, readingVimrc).then(res.send.bind(res));
   });
   robot.router.get("/reading_vimrc", (req, res) => {
     res.set("Content-Type", "text/plain");
