@@ -94,7 +94,7 @@ const createStartingMessage = (data, vimrcs) => {
   }`;
 };
 
-const generateInfoYAML = (robot, readingVimrc) => {
+const generateResultData = (robot, readingVimrc) => {
   return getNextYAML(robot).then((nextData) => {
     if (nextData.id === readingVimrc.id) {
       nextData.members = readingVimrc.members.sort();
@@ -107,7 +107,13 @@ const generateInfoYAML = (robot, readingVimrc) => {
           hash: vimrc.hash
         }));
     }
-    return YAML.safeDump([nextData], {lineWidth: 1000});
+    return nextData;
+  });
+};
+
+const generateInfoYAML = (robot, readingVimrc) => {
+  return generateResultData(robot, readingVimrc).then((resultData) => {
+    return YAML.safeDump([resultData], {lineWidth: 1000});
   });
 };
 
