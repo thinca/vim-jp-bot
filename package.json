@@ -4,13 +4,17 @@
   "version": "0.0.0",
   "author": "thinca <thinca@gmail.com>",
   "dependencies": {
+    "fs-promise": "^1.0.0",
+    "github": "^8.1.0",
     "hubot": "^2.18.0",
     "hubot-gitter2": "github:huafu/hubot-gitter2",
     "hubot-lingr": "github:miyagawa/hubot-lingr",
     "hubot-slack": "^4.0.2",
     "hubot-vimhelp": "^1.2.0",
     "js-yaml": "^3.6.0",
-    "printf": "^0.2.3"
+    "mkdirp-promise": "^5.0.0",
+    "printf": "^0.2.3",
+    "ssh-keygen2": "^0.1.0"
   },
   "devDependencies": {
     "eslint": "^2.9.0"

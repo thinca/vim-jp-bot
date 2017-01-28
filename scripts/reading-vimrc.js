@@ -15,6 +15,17 @@
 //   HUBOT_READING_VIMRC_ADMIN_USERS
 //     Admin users.  This is comma separated list.
 //     Some commands can be executed by admin users only.
+//   HUBOT_READING_VIMRC_HOMEPAGE
+//     Site URL of reading vimrc.
+//     This must end with "/".
+//   HUBOT_READING_VIMRC_GITHUB_REPOS
+//     Git repository of reading-vimrc gh-pages. (Like "vim-jp/reading-vimrc")
+//   HUBOT_READING_VIMRC_WORK_DIR
+//     Working directory.
+//     This script can update the reading vimrc sites on GitHub Pages.
+//   HUBOT_READING_VIMRC_GITHUB_API_TOKEN
+//     GitHub API token to register ssh key to GitHub.
+//     write:public_key scope is needed.
 //
 // Commands:
 //   !reading_vimrc start - Start the reading vimrc.  Admin only.
@@ -24,6 +35,7 @@
 //   !reading_vimrc status - Show the status(started or stopped).
 //   !reading_vimrc member - List the members of current reading vimrc.
 //   !reading_vimrc member_with_count - List of members with said count.
+//   !reading_vimrc next {vimrc} ... - Update next vimrc.
 //   !reading_vimrc help - Show the help.
 //
 // Author:
@@ -39,9 +51,11 @@ const YAML = require("js-yaml");
 const printf = require("printf");
 
 const ReadingVimrc = require("../lib/reading_vimrc");
+const ReadingVimrcRepos = require("../lib/reading_vimrc_repos");
 
 const ROOM_NAME = process.env.HUBOT_READING_VIMRC_ROOM_NAME || "vim-jp/reading-vimrc";
 const ADMIN_USERS = (process.env.HUBOT_READING_VIMRC_ADMIN_USERS || "").split(/,/);
+const HOMEPAGE_BASE = process.env.HUBOT_READING_VIMRC_HOMEPAGE || "http://vim-jp.org/reading-vimrc/";
 
 const helpMessage = `vimrc読書会で発言した人を集計するための bot です
 
@@ -188,6 +202,23 @@ function isAdmin(user) {
 }
 
 module.exports = (robot) => {
+  let readingVimrcRepos;
+  (() => {
+    const githubRepos = process.env.HUBOT_READING_VIMRC_GITHUB_REPOS;
+    const workDir = process.env.HUBOT_READING_VIMRC_WORK_DIR;
+    const apiToken = process.env.HUBOT_READING_VIMRC_GITHUB_API_TOKEN;
+    if (!githubRepos || !workDir || !apiToken) {
+      return;
+    }
+    const repos = new ReadingVimrcRepos(githubRepos, workDir, apiToken);
+    repos.setup().then(() => {
+      readingVimrcRepos = repos;
+      robot.logger.info("ReadingVimrcRepos: setup succeeded.");
+    }).catch((e) => {
+      robot.logger.error(`ReadingVimrcRepos: setup failed.`, e);
+    });
+  })();
+
   const readingVimrc = new ReadingVimrc();
   let targetRoomId = 'Shell';  // for shell adapter on debug
   if (robot.adapterName === "gitter2") {
@@ -274,6 +305,19 @@ module.exports = (robot) => {
     } else {
       res.send("おつかれさまでした。次回は続きを読むので、どこまで読んだか覚えておきましょう！");
     }
+    if (readingVimrcRepos) {
+      generateResultData(robot, readingVimrc).then((resultData) => {
+        return readingVimrcRepos.finish(resultData).then(() => resultData);
+      }).then((resultData) => {
+        const id = resultData.id;
+        const url = `${HOMEPAGE_BASE}archive/${printf("%03d", id)}.html`;
+        res.send(`アーカイブページを更新しました: [第${id}回](${url})`);
+      }).catch((error) => {
+        res.send(`ERROR: ${error}`);
+        res.send(error);
+        robot.logger.error("Error occurred while updating a result:", error);
+      });
+    }
   });
   robot.hear(/^!reading_vimrc\s+reset$/, {readingVimrc: true, admin: true}, (res) => {
     readingVimrc.reset();
@@ -315,6 +359,20 @@ module.exports = (robot) => {
       lines.push("\n", readingVimrc.startLink);
       res.send(lines.join("\n"));
     }
+  });
+  robot.hear(/^!reading_vimrc\s+next\s+([^]+)/, {readingVimrc: true, admin: true}, (res) => {
+    if (!readingVimrcRepos) {
+      return;
+    }
+    const urls = res.match[1].split(/\s+/);
+    generateResultData(robot, readingVimrc).then((resultData) => {
+      readingVimrcRepos.next(urls, resultData).then((nextData) => {
+        res.send(`次回予告を更新しました:\n次回 第${nextData.id}回 ${nextData.date} [${nextData.author.name}](${nextData.author.url}) さん`);
+      }).catch((error) => {
+        res.send(`ERROR: ${error}`);
+        robot.logger.error("Error occurred while updating a result:", error);
+      });
+    });
   });
   robot.hear(/^!reading_vimrc\s+help/, {readingVimrc: true}, (res) => {
     res.send(helpMessage);
