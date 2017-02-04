@@ -7,7 +7,7 @@
     "fs-promise": "^1.0.0",
     "github": "^8.1.0",
     "hubot": "^2.18.0",
-    "hubot-gitter2": "github:huafu/hubot-gitter2",
+    "hubot-gitter2": "github:huafu/hubot-gitter2#develop",
     "hubot-lingr": "github:miyagawa/hubot-lingr",
     "hubot-slack": "^4.0.2",
     "hubot-vimhelp": "^1.2.0",
