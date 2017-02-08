@@ -26,6 +26,8 @@
 //   HUBOT_READING_VIMRC_GITHUB_API_TOKEN
 //     GitHub API token to register ssh key to GitHub.
 //     write:public_key scope is needed.
+//   HUBOT_READING_VIMRC_GITTER_ACTIVITY_HOOK_URL
+//     URL to update gitter activity.
 //
 // Commands:
 //   !reading_vimrc start - Start the reading vimrc.  Admin only.
@@ -56,6 +58,7 @@ const ReadingVimrcRepos = require("../lib/reading_vimrc_repos");
 const ROOM_NAME = process.env.HUBOT_READING_VIMRC_ROOM_NAME || "vim-jp/reading-vimrc";
 const ADMIN_USERS = (process.env.HUBOT_READING_VIMRC_ADMIN_USERS || "").split(/,/);
 const HOMEPAGE_BASE = process.env.HUBOT_READING_VIMRC_HOMEPAGE || "http://vim-jp.org/reading-vimrc/";
+const GITTER_HOOK = process.env.HUBOT_READING_VIMRC_GITTER_ACTIVITY_HOOK_URL;
 
 const helpMessage = `vimrc読書会で発言した人を集計するための bot です
 
@@ -101,10 +104,19 @@ const createStartingMessage = (data, vimrcs) => {
     }
     return "";
   })()}
-今回読む vimrc: [${data.author.name}](${data.author.url}) さん:${
+${createSumaryMessage(data, vimrcs)}`;
+};
+
+const createActivityMessage = (data, vimrcs) => {
+  return `=== 第${data.id}回 vimrc読書会 ===
+${createSumaryMessage(data, vimrcs)}`;
+};
+
+const createSumaryMessage = (data, vimrcs) => {
+  return `今回読む vimrc: [${data.author.name}](${data.author.url}) さん:${
     vimrcs.map((vimrc) => `
 [${vimrc.name}](${vimrc.link}) ([DL](${vimrc.raw_link}))`
-              ).join("")
+    ).join("")
   }`;
 };
 
@@ -295,6 +307,20 @@ module.exports = (robot) => {
           });
         });
         res.send(createStartingMessage(nextData, vimrcs));
+        if (GITTER_HOOK) {
+          const activity = createActivityMessage(nextData, vimrcs);
+          const data = JSON.stringify({message: activity});
+          const options = {
+            headers: {"Content-Type": "application/json"}
+          };
+          robot.http(GITTER_HOOK, options).post(data)((err, httpRes, body) => {
+            if (err) {
+              robot.logger.error(`POST activity failed:`, err, body);
+            } else {
+              robot.logger.info(`POST activity succeeded:`, body);
+            }
+          });
+        }
       });
     });
   });
