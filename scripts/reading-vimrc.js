@@ -313,6 +313,8 @@ module.exports = (robot) => {
           const options = {
             headers: {"Content-Type": "application/json"}
           };
+          robot.logger.info("Update Gitter Activity:", GITTER_HOOK);
+          robot.logger.info("POST DATA:", data);
           robot.http(GITTER_HOOK, options).post(data)((err, httpRes, body) => {
             if (err) {
               robot.logger.error(`POST activity failed:`, err, body);
