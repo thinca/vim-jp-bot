@@ -60,18 +60,19 @@ const ADMIN_USERS = (process.env.HUBOT_READING_VIMRC_ADMIN_USERS || "").split(/,
 const HOMEPAGE_BASE = process.env.HUBOT_READING_VIMRC_HOMEPAGE || "http://vim-jp.org/reading-vimrc/";
 const GITTER_HOOK = process.env.HUBOT_READING_VIMRC_GITTER_ACTIVITY_HOOK_URL;
 
-const helpMessage = `vimrc読書会で発言した人を集計するための bot です
+const helpMessage = `vimrc読書会サポート bot です
 
-!reading_vimrc {command}
+!reading_vimrc {command} [{args}...]
 
-"start"   : 集計の開始、"member" は "reset" される(owner)
-"stop"    : 集計の終了(owner)
-"reset"   : "member" をリセット(owner)
-"restore" : "member" を1つ前に戻す(owner)
-"status"  : ステータスの出力
-"member"  : "start" ～ "stop" の間に発言した人を列挙
-"member_with_count" : "member" に発言数も追加して列挙
-"help"    : 使い方を出力`;
+start         : 会の開始、"member" は "reset" される(owner)
+stop          : 会の終了(owner)
+reset         : "member" をリセット(owner)
+restore       : "member" を1つ前に戻す(owner)
+status        : ステータスの出力
+member        : "start" ～ "stop" の間に発言した人を列挙
+member_with_count : "member" に発言数も追加して列挙
+next {url}... : 次回分更新(owner)
+help          : 使い方を出力`;
 
 const createStartingMessage = (data, vimrcs) => {
   return `=== 第${data.id}回 vimrc読書会 ===
