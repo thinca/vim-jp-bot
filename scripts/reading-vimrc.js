@@ -260,7 +260,7 @@ module.exports = (robot) => {
       readingVimrc.add(res.message);
     }
   });
-  robot.hear(/^(?:(\S+)#)??(L\d+(?:-L?\d+)?(?:(?:\s+L|,L?)\d+(?:-L?\d+)?)*)/, {readingVimrc: true}, (res) => {
+  robot.hear(/^(?:(\S+)#)??(L\d+(?:[-+]L?\d+)?(?:(?:\s+L|,L?)\d+(?:[-+]L?\d+)?)*)/, {readingVimrc: true}, (res) => {
     if (!readingVimrc.isRunning) {
       return;
     }
@@ -275,14 +275,13 @@ module.exports = (robot) => {
     }
     const filename = path.basename(url);
     const text = linesInfo.split(/[\s,]+/)
-      .map((info) => info.match(/L?(\d+)(?:-L?(\d+))?/))
+      .map((info) => info.match(/L?(\d+)(?:([-+])L?(\d+))?/))
       .filter((matchResult) => matchResult != null)
       .map((matchResult) => {
-        const [startLine, endLine] =
-          matchResult
-            .slice(1, 3)
-            .filter((l) => l != null)
-            .map((l) => Number.parseInt(l));
+        const startLine = Number.parseInt(matchResult[1]);
+        const flag = matchResult[2];
+        const secondNum = matchResult[3] ? Number.parseInt(matchResult[3]) : undefined;
+        const endLine = flag === "+" ? startLine + secondNum - 1 : secondNum;
         const lines = readingVimrc.getVimrcLines(content, startLine, endLine);
         if (lines.length === 0) {
           return `無効な範囲です: ${matchResult[0]}`;
