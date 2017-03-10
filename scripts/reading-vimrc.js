@@ -121,8 +121,8 @@ const createSumaryMessage = (data, vimrcs) => {
   }`;
 };
 
-const generateResultData = (robot, readingVimrc) => {
-  return getNextYAML(robot).then((nextData) => {
+const generateResultData = (readingVimrcRepos, readingVimrc) => {
+  return readingVimrcRepos.readNextYAMLData().then((nextData) => {
     if (nextData.id === readingVimrc.id) {
       nextData.members = readingVimrc.members.sort();
       nextData.log = readingVimrc.startLink;
@@ -138,8 +138,8 @@ const generateResultData = (robot, readingVimrc) => {
   });
 };
 
-const generateInfoYAML = (robot, readingVimrc) => {
-  return generateResultData(robot, readingVimrc).then((resultData) => {
+const generateInfoYAML = (readingVimrcRepos, readingVimrc) => {
+  return generateResultData(readingVimrcRepos, readingVimrc).then((resultData) => {
     return YAML.safeDump([resultData], {lineWidth: 1000});
   });
 };
@@ -196,18 +196,6 @@ function toGithubLink(vimrc, robot) {
 
 function makeGitterLink(room, message) {
   return `https://gitter.im/${room}?at=${message.id}`;
-}
-
-function getNextYAML(robot) {
-  return new Promise((resolve, reject) => {
-    robot.http("https://raw.githubusercontent.com/vim-jp/reading-vimrc/gh-pages/_data/next.yml").get()((err, res, body) => {
-      if (err) {
-        reject(err);
-        return;
-      }
-      resolve(YAML.safeLoad(body)[0]);
-    });
-  });
 }
 
 function isAdmin(user) {
@@ -297,7 +285,7 @@ module.exports = (robot) => {
     res.send(text);
   });
   robot.hear(/^!reading_vimrc[\s]+start$/i, {readingVimrc: true, admin: true}, (res) => {
-    getNextYAML(robot).then((nextData) => {
+    readingVimrcRepos.readNextYAMLData().then((nextData) => {
       const link = makeGitterLink(ROOM_NAME, res.envelope.message);
       Promise.all(nextData.vimrcs.map((vimrc) => toGithubLink(vimrc, robot))).then((vimrcs) => {
         readingVimrc.start(nextData.id, link, vimrcs, nextData.part);
@@ -334,7 +322,7 @@ module.exports = (robot) => {
       res.send("おつかれさまでした。次回は続きを読むので、どこまで読んだか覚えておきましょう！");
     }
     if (readingVimrcRepos) {
-      generateResultData(robot, readingVimrc).then((resultData) => {
+      generateResultData(readingVimrcRepos, readingVimrc).then((resultData) => {
         return readingVimrcRepos.finish(resultData).then(() => resultData);
       }).then((resultData) => {
         const id = resultData.id;
@@ -393,7 +381,7 @@ module.exports = (robot) => {
       return;
     }
     const urls = res.match[1].split(/\s+/);
-    generateResultData(robot, readingVimrc).then((resultData) => {
+    generateResultData(readingVimrcRepos, readingVimrc).then((resultData) => {
       readingVimrcRepos.next(urls, resultData).then((nextData) => {
         res.send(`次回予告を更新しました:\n次回 第${nextData.id}回 ${nextData.date} [${nextData.author.name}](${nextData.author.url}) さん`);
       }).catch((error) => {
@@ -408,7 +396,7 @@ module.exports = (robot) => {
 
   robot.router.get("/reading_vimrc/info.yml", (req, res) => {
     res.set("Content-Type", "application/x-yaml");
-    generateInfoYAML(robot, readingVimrc).then(res.send.bind(res));
+    generateInfoYAML(readingVimrcRepos, readingVimrc).then(res.send.bind(res));
   });
   robot.router.get("/reading_vimrc", (req, res) => {
     res.set("Content-Type", "text/plain");
