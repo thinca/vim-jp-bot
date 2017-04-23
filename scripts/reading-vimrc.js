@@ -269,7 +269,7 @@ module.exports = (robot) => {
         const startLine = Number.parseInt(matchResult[1]);
         const flag = matchResult[2];
         const secondNum = matchResult[3] ? Number.parseInt(matchResult[3]) : undefined;
-        const endLine = flag === "+" ? startLine + secondNum - 1 : secondNum;
+        const endLine = flag === "+" ? startLine + secondNum : secondNum;
         const lines = readingVimrc.getVimrcLines(content, startLine, endLine);
         if (lines.length === 0) {
           return `無効な範囲です: ${matchResult[0]}`;
