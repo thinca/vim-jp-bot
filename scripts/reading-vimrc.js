@@ -38,7 +38,7 @@
 //   !reading_vimrc member - List the members of current reading vimrc.
 //   !reading_vimrc member_with_count - List of members with said count.
 //   !reading_vimrc next {vimrc} ... - Update next vimrc.
-//   !reading_vimrc request {vimrc} - Add a vimrc to request page.
+//   !reading_vimrc request[!] {vimrc} - Add a vimrc to request page.
 //   !reading_vimrc help - Show the help.
 //
 // Author:
@@ -50,6 +50,7 @@ if (!process.env.HUBOT_READING_VIMRC_ENABLE) {
 }
 
 const path = require("path");
+const {URL} = require("url");
 const YAML = require("js-yaml");
 const printf = require("printf");
 
@@ -75,7 +76,7 @@ status        : ステータスの出力
 member        : "start" ～ "stop" の間に発言した人を列挙
 member_with_count : "member" に発言数も追加して列挙
 next {url}... : 次回分更新(owner)
-request {url}... : 読みたい vimrc をリクエストページに追加
+request[!] {url}... : 読みたい vimrc をリクエストページに追加
 help          : 使い方を出力`;
 
 const createStartingMessage = (data, vimrcs) => {
@@ -394,21 +395,40 @@ module.exports = (robot) => {
       });
     });
   });
-  robot.hear(/^!reading_vimrc\s+request\s+(\S+)(?:\s+([^]+))?/, {readingVimrc: true}, (res) => {
+  robot.hear(/^!reading_vimrc\s+request(!?)\s+(\S+)(?:\s+([^]+))?/, {readingVimrc: true}, (res) => {
     if (!readingVimrcRepos) {
       return;
     }
-    const [, url, comment] = res.match;
+    const update = () => {
+      readingVimrcRepos.addWikiEntry(requester, author, url, comment).then((updated) => {
+        if (updated) {
+          res.send(`vimrc を[リクエストページ](${REQUEST_PAGE})に追加しました`);
+        } else {
+          res.send(`何らかの理由により、[リクエストページ](${REQUEST_PAGE})は更新されませんでした`);
+        }
+      }).catch((error) => {
+        res.send(`ERROR: ${error}`);
+        robot.logger.error("Error occurred while updating a result:", error);
+      });
+    };
+
+    const force = res.match[1] === "!";
+
+    const [, , url, comment] = res.match;
     const requester = res.envelope.user.name;
-    readingVimrcRepos.addWikiEntry(requester, url, comment).then((updated) => {
-      if (updated) {
-        res.send(`vimrc を[リクエストページ](${REQUEST_PAGE})に追加しました`);
+    const author = new URL(url).pathname.split("/")[1];
+
+    if (force) {
+      update();
+      return;
+    }
+
+    readingVimrcRepos.readTargetMembers().then((memberSet) => {
+      if (memberSet.has(author)) {
+        res.send(`${author} さんの vimrc は過去に読まれています。\n再リクエストの場合は request! を使ってください`);
       } else {
-        res.send(`何らかの理由により、[リクエストページ](${REQUEST_PAGE})は更新されませんでした`);
+        update();
       }
-    }).catch((error) => {
-      res.send(`ERROR: ${error}`);
-      robot.logger.error("Error occurred while updating a result:", error);
     });
   });
   robot.hear(/^!reading_vimrc\s+help/, {readingVimrc: true}, (res) => {
