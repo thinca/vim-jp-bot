@@ -51,7 +51,6 @@ if (!process.env.HUBOT_READING_VIMRC_ENABLE) {
 
 const path = require("path");
 const {URL} = require("url");
-const YAML = require("js-yaml");
 const printf = require("printf");
 
 const ReadingVimrc = require("../lib/reading_vimrc");
@@ -140,11 +139,6 @@ const generateResultData = async (readingVimrcRepos, readingVimrc) => {
       }));
   }
   return nextData;
-};
-
-const generateInfoYAML = async (readingVimrcRepos, readingVimrc) => {
-  const resultData = await generateResultData(readingVimrcRepos, readingVimrc);
-  return YAML.safeDump([resultData], {lineWidth: 1000});
 };
 
 const lastCommitHash = (() => {
@@ -431,19 +425,5 @@ module.exports = (robot) => {
   });
   robot.hear(/^!reading_vimrc\s+help/, {readingVimrc: true}, (res) => {
     res.send(helpMessage);
-  });
-
-  robot.router.get("/reading_vimrc/info.yml", async (req, res) => {
-    res.set("Content-Type", "application/x-yaml");
-    const yaml = await generateInfoYAML(readingVimrcRepos, readingVimrc);
-    res.send(yaml);
-  });
-  robot.router.get("/reading_vimrc", (req, res) => {
-    res.set("Content-Type", "text/plain");
-    res.send(`status: ${readingVimrc.status}
-members:
-${readingVimrc.members.sort().join("\n")}
-link: ${readingVimrc.startLink}
-`);
   });
 };
