@@ -178,7 +178,6 @@ const toGithubLink = async (vimrc, robot) => {
     link,
     raw_link,
     name: vimrc.name,
-    base: vimrc,
     hash,
   };
 };
