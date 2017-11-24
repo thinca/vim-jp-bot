@@ -136,7 +136,7 @@ const generateResultData = async (readingVimrcRepos, readingVimrc) => {
         name: vimrc.name,
         url: vimrc.link,
         raw_url: vimrc.raw_link,
-        hash: vimrc.hash
+        hash: vimrc.hash,
       }));
   }
   return nextData;
@@ -187,7 +187,7 @@ const toGithubLink = async (vimrc, robot) => {
       raw_link,
       name: vimrc.name,
       base: vimrc,
-      hash
+      hash,
     };
   };
   if (vimrc.hash) {
@@ -304,7 +304,7 @@ module.exports = (robot) => {
       const activity = createActivityMessage(nextData, vimrcs);
       const data = JSON.stringify({message: activity});
       const options = {
-        headers: {"Content-Type": "application/json"}
+        headers: {"Content-Type": "application/json"},
       };
       robot.logger.info("Update Gitter Activity:", GITTER_HOOK);
       robot.logger.info("POST DATA:", data);
