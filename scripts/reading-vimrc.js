@@ -235,7 +235,7 @@ module.exports = (robot) => {
   });
   robot.hear(/.*/i, {readingVimrc: true}, (res) => {
     if (!(/^!reading_vimrc/.test(res.message.text))) {
-      readingVimrc.add(res.message);
+      readingVimrc.addMessage(res.message);
     }
   });
   robot.hear(/^(?:(\S+)#)??(L\d+(?:[-+]L?\d+)?(?:(?:\s+L|,L?)\d+(?:[-+]L?\d+)?)*)/, {readingVimrc: true}, (res) => {
