@@ -126,27 +126,25 @@ const createSumaryMessage = (data, vimrcs) => {
   }`;
 };
 
-const generateResultData = (readingVimrcRepos, readingVimrc) => {
-  return readingVimrcRepos.readNextYAMLData().then((nextData) => {
-    if (nextData.id === readingVimrc.id) {
-      nextData.members = readingVimrc.members.sort();
-      nextData.log = readingVimrc.startLink;
-      nextData.vimrcs = readingVimrc.vimrcs.map((vimrc) => (
-        {
-          name: vimrc.name,
-          url: vimrc.link,
-          raw_url: vimrc.raw_link,
-          hash: vimrc.hash
-        }));
-    }
-    return nextData;
-  });
+const generateResultData = async (readingVimrcRepos, readingVimrc) => {
+  const nextData = await readingVimrcRepos.readNextYAMLData();
+  if (nextData.id === readingVimrc.id) {
+    nextData.members = readingVimrc.members.sort();
+    nextData.log = readingVimrc.startLink;
+    nextData.vimrcs = readingVimrc.vimrcs.map((vimrc) => (
+      {
+        name: vimrc.name,
+        url: vimrc.link,
+        raw_url: vimrc.raw_link,
+        hash: vimrc.hash
+      }));
+  }
+  return nextData;
 };
 
-const generateInfoYAML = (readingVimrcRepos, readingVimrc) => {
-  return generateResultData(readingVimrcRepos, readingVimrc).then((resultData) => {
-    return YAML.safeDump([resultData], {lineWidth: 1000});
-  });
+const generateInfoYAML = async (readingVimrcRepos, readingVimrc) => {
+  const resultData = await generateResultData(readingVimrcRepos, readingVimrc);
+  return YAML.safeDump([resultData], {lineWidth: 1000});
 };
 
 const lastCommitHash = (() => {
@@ -175,7 +173,7 @@ const lastCommitHash = (() => {
   };
 })();
 
-function toGithubLink(vimrc, robot) {
+const toGithubLink = async (vimrc, robot) => {
   const makeLinkData = (hash) => {
     vimrc.hash = hash;
     const link = /blob\/master\//.test(vimrc.url)
@@ -193,11 +191,12 @@ function toGithubLink(vimrc, robot) {
     };
   };
   if (vimrc.hash) {
-    return Promise.resolve(makeLinkData(vimrc.hash));
+    return makeLinkData(vimrc.hash);
   } else {
-    return lastCommitHash(vimrc.url, robot).then(makeLinkData);
+    const hash = await lastCommitHash(vimrc.url, robot);
+    return makeLinkData(hash);
   }
-}
+};
 
 function makeGitterLink(room, message) {
   return `https://gitter.im/${room}?at=${message.id}`;
@@ -209,7 +208,7 @@ function isAdmin(user) {
 
 module.exports = (robot) => {
   let readingVimrcRepos;
-  (() => {
+  (async () => {
     const githubRepos = process.env.HUBOT_READING_VIMRC_GITHUB_REPOS;
     const workDir = process.env.HUBOT_READING_VIMRC_WORK_DIR;
     const apiToken = process.env.HUBOT_READING_VIMRC_GITHUB_API_TOKEN;
@@ -217,12 +216,13 @@ module.exports = (robot) => {
       return;
     }
     const repos = new ReadingVimrcRepos(githubRepos, workDir, apiToken);
-    repos.setup().then(() => {
+    try {
+      await repos.setup();
       readingVimrcRepos = repos;
       robot.logger.info("ReadingVimrcRepos: setup succeeded.");
-    }).catch((e) => {
+    } catch (e) {
       robot.logger.error("ReadingVimrcRepos: setup failed.", e);
-    });
+    }
   })();
 
   const readingVimrc = new ReadingVimrc();
@@ -289,37 +289,35 @@ module.exports = (robot) => {
       }).join("\n");
     res.send(text);
   });
-  robot.hear(/^!reading_vimrc[\s]+start$/i, {readingVimrc: true, admin: true}, (res) => {
-    readingVimrcRepos.readNextYAMLData().then((nextData) => {
-      const link = makeGitterLink(ROOM_NAME, res.envelope.message);
-      Promise.all(nextData.vimrcs.map((vimrc) => toGithubLink(vimrc, robot))).then((vimrcs) => {
-        readingVimrc.start(nextData.id, link, vimrcs, nextData.part);
-        vimrcs.forEach((vimrc) => {
-          robot.http(vimrc.raw_link).get()((err, httpRes, body) => {
-            readingVimrc.setVimrcContent(vimrc.link, body);
-          });
-        });
-        res.send(createStartingMessage(nextData, vimrcs));
-        if (GITTER_HOOK) {
-          const activity = createActivityMessage(nextData, vimrcs);
-          const data = JSON.stringify({message: activity});
-          const options = {
-            headers: {"Content-Type": "application/json"}
-          };
-          robot.logger.info("Update Gitter Activity:", GITTER_HOOK);
-          robot.logger.info("POST DATA:", data);
-          robot.http(GITTER_HOOK, options).post(data)((err, httpRes, body) => {
-            if (err) {
-              robot.logger.error("POST activity failed:", err, body);
-            } else {
-              robot.logger.info("POST activity succeeded:", body);
-            }
-          });
-        }
+  robot.hear(/^!reading_vimrc[\s]+start$/i, {readingVimrc: true, admin: true}, async (res) => {
+    const nextData = await readingVimrcRepos.readNextYAMLData();
+    const link = makeGitterLink(ROOM_NAME, res.envelope.message);
+    const vimrcs = await Promise.all(nextData.vimrcs.map((vimrc) => toGithubLink(vimrc, robot)));
+    readingVimrc.start(nextData.id, link, vimrcs, nextData.part);
+    vimrcs.forEach((vimrc) => {
+      robot.http(vimrc.raw_link).get()((err, httpRes, body) => {
+        readingVimrc.setVimrcContent(vimrc.link, body);
       });
     });
+    res.send(createStartingMessage(nextData, vimrcs));
+    if (GITTER_HOOK) {
+      const activity = createActivityMessage(nextData, vimrcs);
+      const data = JSON.stringify({message: activity});
+      const options = {
+        headers: {"Content-Type": "application/json"}
+      };
+      robot.logger.info("Update Gitter Activity:", GITTER_HOOK);
+      robot.logger.info("POST DATA:", data);
+      robot.http(GITTER_HOOK, options).post(data)((err, httpRes, body) => {
+        if (err) {
+          robot.logger.error("POST activity failed:", err, body);
+        } else {
+          robot.logger.info("POST activity succeeded:", body);
+        }
+      });
+    }
   });
-  robot.hear(/^!reading_vimrc\s+stop$/, {readingVimrc: true, admin: true}, (res) => {
+  robot.hear(/^!reading_vimrc\s+stop$/, {readingVimrc: true, admin: true}, async (res) => {
     readingVimrc.stop();
     if (!readingVimrc.part || readingVimrc.part === "後編") {
       res.send(`おつかれさまでした。次回読む vimrc を決めましょう！\n${REQUEST_PAGE}`);
@@ -327,17 +325,17 @@ module.exports = (robot) => {
       res.send("おつかれさまでした。次回は続きを読むので、どこまで読んだか覚えておきましょう！");
     }
     if (readingVimrcRepos) {
-      generateResultData(readingVimrcRepos, readingVimrc).then((resultData) => {
-        return readingVimrcRepos.finish(resultData).then(() => resultData);
-      }).then((resultData) => {
+      try {
+        const resultData = await generateResultData(readingVimrcRepos, readingVimrc);
+        await readingVimrcRepos.finish(resultData);
         const id = resultData.id;
         const url = `${HOMEPAGE_BASE}archive/${printf("%03d", id)}.html`;
         res.send(`アーカイブページを更新しました: [第${id}回](${url})`);
-      }).catch((error) => {
+      } catch (error) {
         res.send(`ERROR: ${error}`);
         res.send(error);
         robot.logger.error("Error occurred while updating a result:", error);
-      });
+      }
     }
   });
   robot.hear(/^!reading_vimrc\s+reset$/, {readingVimrc: true, admin: true}, (res) => {
@@ -381,35 +379,36 @@ module.exports = (robot) => {
       res.send(lines.join("\n"));
     }
   });
-  robot.hear(/^!reading_vimrc\s+next\s+([^]+)/, {readingVimrc: true, admin: true}, (res) => {
+  robot.hear(/^!reading_vimrc\s+next\s+([^]+)/, {readingVimrc: true, admin: true}, async (res) => {
     if (!readingVimrcRepos) {
       return;
     }
-    const urls = res.match[1].split(/\s+/);
-    generateResultData(readingVimrcRepos, readingVimrc).then((resultData) => {
-      readingVimrcRepos.next(urls, resultData).then((nextData) => {
-        res.send(`次回予告を更新しました:\n次回 第${nextData.id}回 ${nextData.date} [${nextData.author.name}](${nextData.author.url}) さん`);
-      }).catch((error) => {
-        res.send(`ERROR: ${error}`);
-        robot.logger.error("Error occurred while updating a result:", error);
-      });
-    });
+    try {
+      const urls = res.match[1].split(/\s+/);
+      const resultData = await generateResultData(readingVimrcRepos, readingVimrc);
+      const nextData = await readingVimrcRepos.next(urls, resultData);
+      res.send(`次回予告を更新しました:\n次回 第${nextData.id}回 ${nextData.date} [${nextData.author.name}](${nextData.author.url}) さん`);
+    } catch (error) {
+      res.send(`ERROR: ${error}`);
+      robot.logger.error("Error occurred while updating a result:", error);
+    }
   });
-  robot.hear(/^!reading_vimrc\s+request(!?)\s+(\S+)(?:\s+([^]+))?/, {readingVimrc: true}, (res) => {
+  robot.hear(/^!reading_vimrc\s+request(!?)\s+(\S+)(?:\s+([^]+))?/, {readingVimrc: true}, async (res) => {
     if (!readingVimrcRepos) {
       return;
     }
-    const update = () => {
-      readingVimrcRepos.addWikiEntry(requester, author, url, comment).then((updated) => {
+    const update = async () => {
+      try {
+        const updated = await readingVimrcRepos.addWikiEntry(requester, author, url, comment);
         if (updated) {
           res.send(`vimrc を[リクエストページ](${REQUEST_PAGE})に追加しました`);
         } else {
           res.send(`何らかの理由により、[リクエストページ](${REQUEST_PAGE})は更新されませんでした`);
         }
-      }).catch((error) => {
+      } catch (error) {
         res.send(`ERROR: ${error}`);
         robot.logger.error("Error occurred while updating a result:", error);
-      });
+      }
     };
 
     const force = res.match[1] === "!";
@@ -419,25 +418,25 @@ module.exports = (robot) => {
     const author = new URL(url).pathname.split("/")[1];
 
     if (force) {
-      update();
+      await update();
       return;
     }
 
-    readingVimrcRepos.readTargetMembers().then((memberSet) => {
-      if (memberSet.has(author)) {
-        res.send(`${author} さんの vimrc は過去に読まれています。\n再リクエストの場合は request! を使ってください`);
-      } else {
-        update();
-      }
-    });
+    const memberSet = await readingVimrcRepos.readTargetMembers();
+    if (memberSet.has(author)) {
+      res.send(`${author} さんの vimrc は過去に読まれています。\n再リクエストの場合は request! を使ってください`);
+    } else {
+      await update();
+    }
   });
   robot.hear(/^!reading_vimrc\s+help/, {readingVimrc: true}, (res) => {
     res.send(helpMessage);
   });
 
-  robot.router.get("/reading_vimrc/info.yml", (req, res) => {
+  robot.router.get("/reading_vimrc/info.yml", async (req, res) => {
     res.set("Content-Type", "application/x-yaml");
-    generateInfoYAML(readingVimrcRepos, readingVimrc).then(res.send.bind(res));
+    const yaml = await generateInfoYAML(readingVimrcRepos, readingVimrc);
+    res.send(yaml);
   });
   robot.router.get("/reading_vimrc", (req, res) => {
     res.set("Content-Type", "text/plain");
