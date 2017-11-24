@@ -62,7 +62,7 @@ const ADMIN_USERS = (process.env.HUBOT_READING_VIMRC_ADMIN_USERS || "").split(/,
 const HOMEPAGE_BASE = process.env.HUBOT_READING_VIMRC_HOMEPAGE || "http://vim-jp.org/reading-vimrc/";
 const GITTER_HOOK = process.env.HUBOT_READING_VIMRC_GITTER_ACTIVITY_HOOK_URL;
 
-const REQUEST_PAGE = `https://github.com/vim-jp/reading-vimrc/wiki/Request`;
+const REQUEST_PAGE = "https://github.com/vim-jp/reading-vimrc/wiki/Request";
 
 const helpMessage = `vimrc読書会サポート bot です
 
@@ -221,12 +221,12 @@ module.exports = (robot) => {
       readingVimrcRepos = repos;
       robot.logger.info("ReadingVimrcRepos: setup succeeded.");
     }).catch((e) => {
-      robot.logger.error(`ReadingVimrcRepos: setup failed.`, e);
+      robot.logger.error("ReadingVimrcRepos: setup failed.", e);
     });
   })();
 
   const readingVimrc = new ReadingVimrc();
-  let targetRoomId = 'Shell';  // for shell adapter on debug
+  let targetRoomId = "Shell";  // for shell adapter on debug
   if (robot.adapterName === "gitter2") {
     robot.adapter._resolveRoom(ROOM_NAME, (room) => {
       targetRoomId = room.id();
@@ -310,9 +310,9 @@ module.exports = (robot) => {
           robot.logger.info("POST DATA:", data);
           robot.http(GITTER_HOOK, options).post(data)((err, httpRes, body) => {
             if (err) {
-              robot.logger.error(`POST activity failed:`, err, body);
+              robot.logger.error("POST activity failed:", err, body);
             } else {
-              robot.logger.info(`POST activity succeeded:`, body);
+              robot.logger.info("POST activity succeeded:", body);
             }
           });
         }
