@@ -168,28 +168,21 @@ const lastCommitHash = (() => {
 })();
 
 const toGithubLink = async (vimrc, robot) => {
-  const makeLinkData = (hash) => {
-    vimrc.hash = hash;
-    const link = /blob\/master\//.test(vimrc.url)
-      ? vimrc.url.replace(/blob\/master\//, `blob/${hash}/`)
-      : `${vimrc.url}/tree/${hash}`;
-    const raw_link = vimrc.url
-      .replace(/https:\/\/github/, "https://raw.githubusercontent")
-      .replace(/blob\/master\//, `${hash}/`);
-    return {
-      link,
-      raw_link,
-      name: vimrc.name,
-      base: vimrc,
-      hash,
-    };
+  const hash = vimrc.hash || await lastCommitHash(vimrc.url, robot);
+  vimrc.hash = hash;
+  const link = /blob\/master\//.test(vimrc.url)
+    ? vimrc.url.replace(/blob\/master\//, `blob/${hash}/`)
+    : `${vimrc.url}/tree/${hash}`;
+  const raw_link = vimrc.url
+    .replace(/https:\/\/github/, "https://raw.githubusercontent")
+    .replace(/blob\/master\//, `${hash}/`);
+  return {
+    link,
+    raw_link,
+    name: vimrc.name,
+    base: vimrc,
+    hash,
   };
-  if (vimrc.hash) {
-    return makeLinkData(vimrc.hash);
-  } else {
-    const hash = await lastCommitHash(vimrc.url, robot);
-    return makeLinkData(hash);
-  }
 };
 
 function makeGitterLink(room, message) {
