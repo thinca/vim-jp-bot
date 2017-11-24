@@ -170,9 +170,7 @@ const lastCommitHash = (() => {
 const toGithubLink = async (vimrc, robot) => {
   const hash = vimrc.hash || await lastCommitHash(vimrc.url, robot);
   vimrc.hash = hash;
-  const link = /blob\/master\//.test(vimrc.url)
-    ? vimrc.url.replace(/blob\/master\//, `blob/${hash}/`)
-    : `${vimrc.url}/tree/${hash}`;
+  const link = vimrc.url.replace(/blob\/\w+\//, `blob/${hash}/`);
   const raw_link = vimrc.url
     .replace(/https:\/\/github/, "https://raw.githubusercontent")
     .replace(/blob\/master\//, `${hash}/`);
