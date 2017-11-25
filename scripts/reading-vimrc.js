@@ -120,7 +120,7 @@ ${createSumaryMessage(data, vimrcs)}`;
 const createSumaryMessage = (data, vimrcs) => {
   return `今回読む vimrc: [${data.author.name}](${data.author.url}) さん:${
     vimrcs.map((vimrc) => `
-[${vimrc.name}](${vimrc.link}) ([DL](${vimrc.raw_link}))`
+[${vimrc.name}](${vimrc.url}) ([DL](${vimrc.raw_url}))`
     ).join("")
   }`;
 };
@@ -129,12 +129,12 @@ const generateResultData = async (readingVimrcRepos, readingVimrc) => {
   const nextData = await readingVimrcRepos.readNextYAMLData();
   if (nextData.id === readingVimrc.id) {
     nextData.members = readingVimrc.members.sort();
-    nextData.log = readingVimrc.startLink;
+    nextData.log = readingVimrc.startURL;
     nextData.vimrcs = readingVimrc.vimrcs.map((vimrc) => (
       {
         name: vimrc.name,
-        url: vimrc.link,
-        raw_url: vimrc.raw_link,
+        url: vimrc.url,
+        raw_url: vimrc.raw_url,
         hash: vimrc.hash,
       }));
   }
@@ -167,7 +167,7 @@ const lastCommitHash = (() => {
   };
 })();
 
-function makeGitterLink(room, message) {
+function makeGitterURL(room, message) {
   return `https://gitter.im/${room}?at=${message.id}`;
 }
 
@@ -179,13 +179,13 @@ module.exports = (robot) => {
   const toGithubLink = async (vimrc) => {
     const hash = vimrc.hash || await lastCommitHash(vimrc.url, robot);
     vimrc.hash = hash;
-    const link = vimrc.url.replace(/blob\/\w+\//, `blob/${hash}/`);
-    const raw_link = vimrc.url
+    const url = vimrc.url.replace(/blob\/\w+\//, `blob/${hash}/`);
+    const raw_url = vimrc.url
       .replace(/https:\/\/github/, "https://raw.githubusercontent")
       .replace(/blob\/master\//, `${hash}/`);
     return {
-      link,
-      raw_link,
+      url,
+      raw_url,
       name: vimrc.name,
       hash,
     };
@@ -275,12 +275,12 @@ module.exports = (robot) => {
   });
   robot.hear(/^!reading_vimrc[\s]+start$/i, {readingVimrc: true, admin: true}, async (res) => {
     const nextData = await readingVimrcRepos.readNextYAMLData();
-    const link = makeGitterLink(ROOM_NAME, res.envelope.message);
+    const url = makeGitterURL(ROOM_NAME, res.envelope.message);
     const vimrcs = await Promise.all(nextData.vimrcs.map((vimrc) => toGithubLink(vimrc)));
-    readingVimrc.start(nextData.id, link, vimrcs, nextData.part);
+    readingVimrc.start(nextData.id, url, vimrcs, nextData.part);
     vimrcs.forEach((vimrc) => {
-      robot.http(vimrc.raw_link).get()((err, httpRes, body) => {
-        readingVimrc.setVimrcContent(vimrc.link, body);
+      robot.http(vimrc.raw_url).get()((err, httpRes, body) => {
+        readingVimrc.setVimrcContent(vimrc.url, body);
       });
     });
     res.send(createStartingMessage(nextData, vimrcs));
@@ -340,7 +340,7 @@ module.exports = (robot) => {
     } else {
       const lines = members;
       lines.sort();
-      lines.push("\n", readingVimrc.startLink);
+      lines.push("\n", readingVimrc.startURL);
       res.send(lines.join("\n"));
     }
   });
@@ -359,7 +359,7 @@ module.exports = (robot) => {
       const lines = [...entries]
         .sort((a, b) => a < b ? -1 : a > b ? 1 : 0)
         .map(([name, count]) => printf("%03d回 : %s", count, name));
-      lines.push("\n", readingVimrc.startLink);
+      lines.push("\n", readingVimrc.startURL);
       res.send(lines.join("\n"));
     }
   });
