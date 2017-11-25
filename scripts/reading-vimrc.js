@@ -167,21 +167,6 @@ const lastCommitHash = (() => {
   };
 })();
 
-const toGithubLink = async (vimrc, robot) => {
-  const hash = vimrc.hash || await lastCommitHash(vimrc.url, robot);
-  vimrc.hash = hash;
-  const link = vimrc.url.replace(/blob\/\w+\//, `blob/${hash}/`);
-  const raw_link = vimrc.url
-    .replace(/https:\/\/github/, "https://raw.githubusercontent")
-    .replace(/blob\/master\//, `${hash}/`);
-  return {
-    link,
-    raw_link,
-    name: vimrc.name,
-    hash,
-  };
-};
-
 function makeGitterLink(room, message) {
   return `https://gitter.im/${room}?at=${message.id}`;
 }
@@ -191,6 +176,21 @@ function isAdmin(user) {
 }
 
 module.exports = (robot) => {
+  const toGithubLink = async (vimrc) => {
+    const hash = vimrc.hash || await lastCommitHash(vimrc.url, robot);
+    vimrc.hash = hash;
+    const link = vimrc.url.replace(/blob\/\w+\//, `blob/${hash}/`);
+    const raw_link = vimrc.url
+      .replace(/https:\/\/github/, "https://raw.githubusercontent")
+      .replace(/blob\/master\//, `${hash}/`);
+    return {
+      link,
+      raw_link,
+      name: vimrc.name,
+      hash,
+    };
+  };
+
   let readingVimrcRepos;
   (async () => {
     const githubRepos = process.env.HUBOT_READING_VIMRC_GITHUB_REPOS;
@@ -276,7 +276,7 @@ module.exports = (robot) => {
   robot.hear(/^!reading_vimrc[\s]+start$/i, {readingVimrc: true, admin: true}, async (res) => {
     const nextData = await readingVimrcRepos.readNextYAMLData();
     const link = makeGitterLink(ROOM_NAME, res.envelope.message);
-    const vimrcs = await Promise.all(nextData.vimrcs.map((vimrc) => toGithubLink(vimrc, robot)));
+    const vimrcs = await Promise.all(nextData.vimrcs.map((vimrc) => toGithubLink(vimrc)));
     readingVimrc.start(nextData.id, link, vimrcs, nextData.part);
     vimrcs.forEach((vimrc) => {
       robot.http(vimrc.raw_link).get()((err, httpRes, body) => {
