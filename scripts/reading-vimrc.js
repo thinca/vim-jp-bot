@@ -169,6 +169,27 @@ function isAdmin(user) {
   return ADMIN_USERS.includes(user.login || user.name);  // user.name for shell adapter
 }
 
+const PLUGIN_REPO_PATTERN =
+  /^\s*(?:Plug(?:in)?|NeoBundle\w+|call\s+(?:dein|minpac)#add\()\s*['"]([^'"]+)/g;
+const extractPluginURLs = (text) => {
+  const repos = [];
+  let result;
+  while((result = PLUGIN_REPO_PATTERN.exec(text)) !== null) {
+    repos.push(result[1]);
+  }
+  const repoURLs = repos.map((repo) => {
+    let url = repo;
+    if (!url.includes("/")) {
+      url = `vim-scripts/${url}`;
+    }
+    if (/^[^/]+\/[^/]+$/.test(url)) {
+      url = `https://github.com/${url}`;
+      }
+    return {repo, url};
+  });
+  return repoURLs;
+};
+
 module.exports = (robot) => {
   const toFixedVimrc = async (vimrc) => {
     const hash = vimrc.hash || await lastCommitHash(vimrc.url, robot);
@@ -258,7 +279,13 @@ module.exports = (robot) => {
         }
         const headUrl = `[${filename}${fragment}](${url}${fragment})`;
         const code = lines.map((line, n) => printf("%4d | %s", n + startLine, line)).join("\n");
-        return headUrl + "\n```vim\n" + code + "\n```";
+        const repoURLs = extractPluginURLs(lines.join("\n")).map(({repo, url}) => `[${repo}](${url})`);
+        return [
+          headUrl,
+          "```vim",
+          code,
+          "```",
+        ].concat(repoURLs).join("\n");
       }).join("\n");
     res.send(text);
   });
