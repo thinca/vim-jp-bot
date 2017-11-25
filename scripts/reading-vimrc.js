@@ -129,7 +129,7 @@ const generateResultData = async (readingVimrcRepos, readingVimrc) => {
   const nextData = await readingVimrcRepos.readNextYAMLData();
   if (nextData.id === readingVimrc.id) {
     nextData.members = readingVimrc.members.sort();
-    nextData.log = readingVimrc.startURL;
+    nextData.log = readingVimrc.logURL;
     nextData.vimrcs = readingVimrc.vimrcs.map((vimrc) => Object.assign({}, vimrc));
   }
   return nextData;
@@ -269,9 +269,9 @@ module.exports = (robot) => {
   });
   robot.hear(/^!reading_vimrc[\s]+start$/i, {readingVimrc: true, admin: true}, async (res) => {
     const nextData = await readingVimrcRepos.readNextYAMLData();
-    const url = makeGitterURL(ROOM_NAME, res.envelope.message);
+    const logURL = makeGitterURL(ROOM_NAME, res.envelope.message);
     const vimrcs = await Promise.all(nextData.vimrcs.map((vimrc) => toGithubLink(vimrc)));
-    readingVimrc.start(nextData.id, url, vimrcs, nextData.part);
+    readingVimrc.start(nextData.id, logURL, vimrcs, nextData.part);
     vimrcs.forEach((vimrc) => {
       robot.http(vimrc.raw_url).get()((err, httpRes, body) => {
         readingVimrc.setVimrcContent(vimrc.url, body);
@@ -334,7 +334,7 @@ module.exports = (robot) => {
     } else {
       const lines = members;
       lines.sort();
-      lines.push("\n", readingVimrc.startURL);
+      lines.push("\n", readingVimrc.logURL);
       res.send(lines.join("\n"));
     }
   });
@@ -353,7 +353,7 @@ module.exports = (robot) => {
       const lines = [...entries]
         .sort((a, b) => a < b ? -1 : a > b ? 1 : 0)
         .map(([name, count]) => printf("%03d回 : %s", count, name));
-      lines.push("\n", readingVimrc.startURL);
+      lines.push("\n", readingVimrc.logURL);
       res.send(lines.join("\n"));
     }
   });
