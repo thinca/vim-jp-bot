@@ -161,13 +161,13 @@ const lastCommitHash = (() => {
   };
 })();
 
-function makeGitterURL(room, message) {
+const makeGitterURL = (room, message) => {
   return `https://gitter.im/${room}?at=${message.id}`;
-}
+};
 
-function isAdmin(user) {
+const isAdmin = (user) => {
   return ADMIN_USERS.includes(user.login || user.name);  // user.name for shell adapter
-}
+};
 
 const PLUGIN_REPO_PATTERN =
   /^\s*(?:Plug(?:in)?|NeoBundle\w+|call\s+(?:dein|minpac)#add\()\s*['"]([^'"]+)/g;
