@@ -130,13 +130,7 @@ const generateResultData = async (readingVimrcRepos, readingVimrc) => {
   if (nextData.id === readingVimrc.id) {
     nextData.members = readingVimrc.members.sort();
     nextData.log = readingVimrc.startURL;
-    nextData.vimrcs = readingVimrc.vimrcs.map((vimrc) => (
-      {
-        name: vimrc.name,
-        url: vimrc.url,
-        raw_url: vimrc.raw_url,
-        hash: vimrc.hash,
-      }));
+    nextData.vimrcs = readingVimrc.vimrcs.map((vimrc) => Object.assign({}, vimrc));
   }
   return nextData;
 };
