@@ -265,7 +265,7 @@ module.exports = (robot) => {
   robot.hear(/^!reading_vimrc[\s]+start$/i, {readingVimrc: true, admin: true}, async (res) => {
     const nextData = await readingVimrcRepos.readNextYAMLData();
     const logURL = makeGitterURL(ROOM_NAME, res.envelope.message);
-    const vimrcs = await Promise.all(nextData.vimrcs.map((vimrc) => toGithubLink(vimrc)));
+    const vimrcs = await Promise.all(nextData.vimrcs.map(toGithubLink));
     readingVimrc.start(nextData.id, logURL, vimrcs, nextData.part);
     vimrcs.forEach((vimrc) => {
       robot.http(vimrc.raw_url).get()((err, httpRes, body) => {
