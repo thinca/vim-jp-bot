@@ -144,9 +144,9 @@ const lastCommitHash = (() => {
     if (hashes.has(place)) {
       return hashes.get(place);
     }
-    const apiUrl = `https://api.github.com/repos/${place}/commits/HEAD`;
+    const apiURL = `https://api.github.com/repos/${place}/commits/HEAD`;
     const p = new Promise((resolve, reject) => {
-      robot.http(apiUrl)
+      robot.http(apiURL)
         .header("Accept", "application/vnd.github.VERSION.sha")
         .get()((err, res, body) => {
           if (err) {
@@ -277,11 +277,11 @@ module.exports = (robot) => {
         if (endLine) {
           fragment += `-L${endLine}`;
         }
-        const headUrl = `[${filename}${fragment}](${url}${fragment})`;
+        const headURL = `[${filename}${fragment}](${url}${fragment})`;
         const code = lines.map((line, n) => printf("%4d | %s", n + startLine, line)).join("\n");
         const repoURLs = extractPluginURLs(lines.join("\n")).map(({repo, url}) => `[${repo}](${url})`);
         return [
-          headUrl,
+          headURL,
           "```vim",
           code,
           "```",
