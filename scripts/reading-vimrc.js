@@ -170,7 +170,7 @@ function isAdmin(user) {
 }
 
 module.exports = (robot) => {
-  const toGithubLink = async (vimrc) => {
+  const toFixedVimrc = async (vimrc) => {
     const hash = vimrc.hash || await lastCommitHash(vimrc.url, robot);
     vimrc.hash = hash;
     const url = vimrc.url.replace(/blob\/\w+\//, `blob/${hash}/`);
@@ -265,7 +265,7 @@ module.exports = (robot) => {
   robot.hear(/^!reading_vimrc[\s]+start$/i, {readingVimrc: true, admin: true}, async (res) => {
     const nextData = await readingVimrcRepos.readNextYAMLData();
     const logURL = makeGitterURL(ROOM_NAME, res.envelope.message);
-    const vimrcs = await Promise.all(nextData.vimrcs.map(toGithubLink));
+    const vimrcs = await Promise.all(nextData.vimrcs.map(toFixedVimrc));
     readingVimrc.start(nextData.id, logURL, vimrcs, nextData.part);
     vimrcs.forEach((vimrc) => {
       robot.http(vimrc.raw_url).get()((err, httpRes, body) => {
