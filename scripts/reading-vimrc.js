@@ -197,7 +197,7 @@ module.exports = (robot) => {
     const url = vimrc.url.replace(/blob\/\w+\//, `blob/${hash}/`);
     const raw_url = vimrc.url
       .replace(/https:\/\/github/, "https://raw.githubusercontent")
-      .replace(/blob\/master\//, `${hash}/`);
+      .replace(/blob\/[^/]+\//, `${hash}/`);
     return {name: vimrc.name, url, raw_url, hash};
   };
 
