@@ -184,7 +184,7 @@ const extractPluginURLs = (text) => {
     }
     if (/^[^/]+\/[^/]+$/.test(url)) {
       url = `https://github.com/${url}`;
-      }
+    }
     return {repo, url};
   });
   return repoURLs;
