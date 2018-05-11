@@ -224,6 +224,7 @@ module.exports = (robot) => {
   if (robot.adapterName === "gitter2") {
     robot.adapter._resolveRoom(ROOM_NAME, (room) => {
       targetRoomId = room.id();
+      robot.logger.info("targetRoomId updated: ", targetRoomId, ROOM_NAME);
     });
   }
 
@@ -237,6 +238,11 @@ module.exports = (robot) => {
       return;
     }
     if (options.admin && !isAdmin(user)) {
+      robot.logger.warning(
+        "A non admin user tried to use an admin command: %s: %s",
+        user.login || user.name,
+        context.response.message.text
+      );
       done();
       return;
     }
