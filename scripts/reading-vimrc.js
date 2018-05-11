@@ -170,7 +170,7 @@ const isAdmin = (user) => {
 };
 
 const PLUGIN_REPO_PATTERN =
-  /^\s*(?:"\s*)?(?:Plug(?:in)?|NeoBundle\w+|call\s+(?:dein|minpac)#add\()\s*['"]([^'"]+)/g;
+  /^\s*(?:"\s*)?(?:Plug(?:in)?|NeoBundle\w+|call\s+(?:dein|minpac)#add\()\s*['"]([^'"]+)/gm;
 const extractPluginURLs = (text) => {
   const repos = [];
   let result;
