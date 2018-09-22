@@ -4,6 +4,7 @@
   "version": "0.0.0",
   "author": "thinca <thinca@gmail.com>",
   "dependencies": {
+    "forever": "^0.15.3",
     "fs-promise": "^1.0.0",
     "github": "^8.1.0",
     "hubot": "^2.18.0",
