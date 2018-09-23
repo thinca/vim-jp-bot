@@ -1,6 +1,6 @@
 // Description:
 //   Supports reading vimrc.
-//   http://vim-jp.org/reading-vimrc/
+//   https://vim-jp.org/reading-vimrc/
 //
 // Dependencies:
 //   js-yaml: 3.6.0
@@ -58,7 +58,7 @@ const ReadingVimrcRepos = require("../lib/reading_vimrc_repos");
 
 const ROOM_NAME = process.env.HUBOT_READING_VIMRC_ROOM_NAME || "vim-jp/reading-vimrc";
 const ADMIN_USERS = (process.env.HUBOT_READING_VIMRC_ADMIN_USERS || "").split(/,/);
-const HOMEPAGE_BASE = process.env.HUBOT_READING_VIMRC_HOMEPAGE || "http://vim-jp.org/reading-vimrc/";
+const HOMEPAGE_BASE = process.env.HUBOT_READING_VIMRC_HOMEPAGE || "https://vim-jp.org/reading-vimrc/";
 const GITTER_HOOK = process.env.HUBOT_READING_VIMRC_GITTER_ACTIVITY_HOOK_URL;
 
 const REQUEST_PAGE = "https://github.com/vim-jp/reading-vimrc/wiki/Request";
