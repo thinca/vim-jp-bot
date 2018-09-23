@@ -15,7 +15,7 @@
     "hubot-vimhelp": "^1.2.0",
     "js-yaml": "^3.6.0",
     "mkdirp-promise": "^5.0.0",
-    "node-fetch": "^1.7.1",
+    "node-fetch": "^1.7.3",
     "printf": "^0.2.3",
     "ssh-keygen2": "^0.1.0"
   },
