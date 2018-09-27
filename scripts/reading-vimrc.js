@@ -52,6 +52,7 @@ if (!process.env.HUBOT_READING_VIMRC_ENABLE) {
 const path = require("path");
 const {URL} = require("url");
 const printf = require("printf");
+const fetch = require("node-fetch");
 
 const ReadingVimrc = require("../lib/reading_vimrc");
 const ReadingVimrcRepos = require("../lib/reading_vimrc_repos");
@@ -138,23 +139,19 @@ const generateResultData = async (readingVimrcRepos, readingVimrc) => {
 const lastCommitHash = (() => {
   // XXX: Should cache expire?
   const hashes = new Map();
-  return (url, robot) => {
+  return (url) => {
     const [, place] = url.match(/https:\/\/github\.com\/([^/]+\/[^/]+)/);
     // XXX Should `hashes` lock? How?
     if (hashes.has(place)) {
       return hashes.get(place);
     }
     const apiURL = `https://api.github.com/repos/${place}/commits/HEAD`;
-    const p = new Promise((resolve, reject) => {
-      robot.http(apiURL)
-        .header("Accept", "application/vnd.github.VERSION.sha")
-        .get()((err, res, body) => {
-          if (err) {
-            reject(err);
-            return;
-          }
-          resolve(body);
-        });
+    const headers = {"Accept": "application/vnd.github.VERSION.sha"};
+    const p = fetch(apiURL, {headers}).then((res) => {
+      if (res.ok) {
+        return res.text();
+      }
+      throw new Error(`GET ${apiURL} was failed:${res.tatus}`);
     });
     hashes.set(place, p);
     return p;
@@ -192,7 +189,7 @@ const extractPluginURLs = (text) => {
 
 module.exports = (robot) => {
   const toFixedVimrc = async (vimrc) => {
-    const hash = vimrc.hash || await lastCommitHash(vimrc.url, robot);
+    const hash = vimrc.hash || await lastCommitHash(vimrc.url);
     vimrc.hash = hash;
     const url = vimrc.url.replace(/blob\/\w+\//, `blob/${hash}/`);
     const raw_url = vimrc.url
@@ -300,27 +297,38 @@ module.exports = (robot) => {
     const logURL = makeGitterURL(ROOM_NAME, res.envelope.message);
     const vimrcs = await Promise.all(nextData.vimrcs.map(toFixedVimrc));
     readingVimrc.start(nextData.id, logURL, vimrcs, nextData.part);
-    vimrcs.forEach((vimrc) => {
-      robot.http(vimrc.raw_url).get()((err, httpRes, body) => {
+    vimrcs.forEach(async (vimrc) => {
+      const response = await fetch(vimrc.raw_url);
+      if (response.ok) {
+        const body = await response.text();
         readingVimrc.setVimrcContent(vimrc.url, body);
-      });
+      } else {
+        res.send(`ERROR: ${vimrc.name} の読み込みに失敗しました`);
+        robot.logger.error(`Fetch vimrc failed: ${response.status}: ${vimrc.raw_url}`);
+      }
     });
     res.send(createStartingMessage(nextData, vimrcs));
     if (GITTER_HOOK) {
       const activity = createActivityMessage(nextData, vimrcs);
       const data = JSON.stringify({message: activity});
       const options = {
+        method: "POST",
         headers: {"Content-Type": "application/json"},
+        body: data,
       };
       robot.logger.info("Update Gitter Activity:", GITTER_HOOK);
       robot.logger.info("POST DATA:", data);
-      robot.http(GITTER_HOOK, options).post(data)((err, httpRes, body) => {
-        if (err) {
-          robot.logger.error("POST activity failed:", err, body);
+      try {
+        const response = await fetch(GITTER_HOOK, options);
+        const responseBody = await response.text();
+        if (response.ok) {
+          robot.logger.info("POST activity succeeded:", responseBody);
         } else {
-          robot.logger.info("POST activity succeeded:", body);
+          robot.logger.error("POST activity failed:", response.status, responseBody);
         }
-      });
+      } catch (err) {
+        robot.logger.error("POST activity failed:", err);
+      }
     }
   });
   robot.hear(/^!reading_vimrc\s+stop$/, {readingVimrc: true, admin: true}, async (res) => {
