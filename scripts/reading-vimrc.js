@@ -139,7 +139,7 @@ const generateResultData = async (readingVimrcRepos, readingVimrc) => {
 const lastCommitHash = (() => {
   // XXX: Should cache expire?
   const hashes = new Map();
-  return (url) => {
+  return async (url) => {
     const [, place] = url.match(/https:\/\/github\.com\/([^/]+\/[^/]+)/);
     // XXX Should `hashes` lock? How?
     if (hashes.has(place)) {
@@ -147,14 +147,13 @@ const lastCommitHash = (() => {
     }
     const apiURL = `https://api.github.com/repos/${place}/commits/HEAD`;
     const headers = {"Accept": "application/vnd.github.VERSION.sha"};
-    const p = fetch(apiURL, {headers}).then((res) => {
-      if (res.ok) {
-        return res.text();
-      }
+    const res = await fetch(apiURL, {headers});
+    if (!res.ok) {
       throw new Error(`GET ${apiURL} was failed:${res.tatus}`);
-    });
-    hashes.set(place, p);
-    return p;
+    }
+    const version = await res.text();
+    hashes.set(place, version);
+    return version;
   };
 })();
 
