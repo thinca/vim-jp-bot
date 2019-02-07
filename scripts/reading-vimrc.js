@@ -54,7 +54,7 @@ const {URL} = require("url");
 const printf = require("printf");
 const fetch = require("node-fetch");
 
-const ReadingVimrc = require("../lib/reading_vimrc");
+const ReadingVimrcProgressor = require("../lib/reading_vimrc_progressor");
 const ReadingVimrcRepos = require("../lib/reading_vimrc_repos");
 
 const ROOM_NAME = process.env.HUBOT_READING_VIMRC_ROOM_NAME || "vim-jp/reading-vimrc";
@@ -215,7 +215,7 @@ module.exports = (robot) => {
     }
   })();
 
-  const readingVimrc = new ReadingVimrc();
+  const progressor = new ReadingVimrcProgressor();
   let targetRoomId = "Shell";  // for shell adapter on debug
   if (robot.adapterName === "gitter2") {
     robot.adapter._resolveRoom(ROOM_NAME, (room) => {
@@ -246,16 +246,16 @@ module.exports = (robot) => {
   });
   robot.hear(/.*/i, {readingVimrc: true}, (res) => {
     if (!(/^!reading_vimrc/.test(res.message.text))) {
-      readingVimrc.addMessage(res.message);
+      progressor.addMessage(res.message);
     }
   });
   robot.hear(/^(?:(\S+)#)??(L\d+(?:[-+]L?\d+)?(?:(?:\s+L|,L?)\d+(?:[-+]L?\d+)?)*)/, {readingVimrc: true}, (res) => {
-    if (!readingVimrc.isRunning) {
+    if (!progressor.isRunning) {
       return;
     }
     const [, name, linesInfo] = res.match;
     const username = res.envelope.user.login || res.envelope.user.name;
-    const [url, content] = readingVimrc.getVimrcFile(name, username);
+    const [url, content] = progressor.getVimrcFile(name, username);
     if (!content) {
       if (name != null) {
         res.send(`File not found: ${name}`);
@@ -271,7 +271,7 @@ module.exports = (robot) => {
         const flag = matchResult[2];
         const secondNum = matchResult[3] ? Number.parseInt(matchResult[3]) : undefined;
         const endLine = flag === "+" ? startLine + secondNum : secondNum;
-        const lines = readingVimrc.getVimrcLines(content, startLine, endLine);
+        const lines = progressor.getVimrcLines(content, startLine, endLine);
         if (lines.length === 0) {
           return `無効な範囲です: ${matchResult[0]}`;
         }
@@ -295,12 +295,12 @@ module.exports = (robot) => {
     const nextData = await readingVimrcRepos.readNextYAMLData();
     const logURL = makeGitterURL(ROOM_NAME, res.envelope.message);
     const vimrcs = await Promise.all(nextData.vimrcs.map(toFixedVimrc));
-    readingVimrc.start(nextData.id, logURL, vimrcs, nextData.part);
+    progressor.start(nextData.id, logURL, vimrcs, nextData.part);
     vimrcs.forEach(async (vimrc) => {
       const response = await fetch(vimrc.raw_url);
       if (response.ok) {
         const body = await response.text();
-        readingVimrc.setVimrcContent(vimrc.url, body);
+        progressor.setVimrcContent(vimrc.url, body);
       } else {
         res.send(`ERROR: ${vimrc.name} の読み込みに失敗しました`);
         robot.logger.error(`Fetch vimrc failed: ${response.status}: ${vimrc.raw_url}`);
@@ -331,15 +331,15 @@ module.exports = (robot) => {
     }
   });
   robot.hear(/^!reading_vimrc\s+stop$/, {readingVimrc: true, admin: true}, async (res) => {
-    readingVimrc.stop();
-    if (!readingVimrc.part || readingVimrc.part === "後編") {
+    progressor.stop();
+    if (!progressor.part || progressor.part === "後編") {
       res.send(`おつかれさまでした。次回読む vimrc を決めましょう！\n${REQUEST_PAGE}`);
     } else {
       res.send("おつかれさまでした。次回は続きを読むので、どこまで読んだか覚えておきましょう！");
     }
     if (readingVimrcRepos) {
       try {
-        const resultData = await generateResultData(readingVimrcRepos, readingVimrc);
+        const resultData = await generateResultData(readingVimrcRepos, progressor);
         await readingVimrcRepos.finish(resultData);
         const id = resultData.id;
         const url = `${HOMEPAGE_BASE}archive/${printf("%03d", id)}.html`;
@@ -352,29 +352,29 @@ module.exports = (robot) => {
     }
   });
   robot.hear(/^!reading_vimrc\s+reset$/, {readingVimrc: true, admin: true}, (res) => {
-    readingVimrc.reset();
+    progressor.reset();
     res.send("reset");
   });
   robot.hear(/^!reading_vimrc\s+restore$/, {readingVimrc: true, admin: true}, (res) => {
-    readingVimrc.restore();
+    progressor.restore();
     res.send("restored");
   });
   robot.hear(/^!reading_vimrc\s+status$/, {readingVimrc: true}, (res) => {
-    res.send(readingVimrc.status);
+    res.send(progressor.status);
   });
   robot.hear(/^!reading_vimrc\s+members?$/, {readingVimrc: true}, (res) => {
-    const members = readingVimrc.members;
+    const members = progressor.members;
     if (members.length === 0) {
       res.send("だれもいませんでした");
     } else {
       const lines = members;
       lines.sort();
-      lines.push("\n", readingVimrc.logURL);
+      lines.push("\n", progressor.logURL);
       res.send(lines.join("\n"));
     }
   });
   robot.hear(/^!reading_vimrc\s+members?_with_count$/, {readingVimrc: true}, (res) => {
-    const messages = readingVimrc.messages;
+    const messages = progressor.messages;
     if (messages.length === 0) {
       res.send("だれもいませんでした");
     } else {
@@ -388,7 +388,7 @@ module.exports = (robot) => {
       const lines = [...entries]
         .sort((a, b) => a < b ? -1 : a > b ? 1 : 0)
         .map(([name, count]) => printf("%03d回 : %s", count, name));
-      lines.push("\n", readingVimrc.logURL);
+      lines.push("\n", progressor.logURL);
       res.send(lines.join("\n"));
     }
   });
@@ -398,7 +398,7 @@ module.exports = (robot) => {
     }
     try {
       const urls = res.match[1].split(/\s+/);
-      const resultData = await generateResultData(readingVimrcRepos, readingVimrc);
+      const resultData = await generateResultData(readingVimrcRepos, progressor);
       const nextData = await readingVimrcRepos.next(urls, resultData);
       res.send(`次回予告を更新しました:\n次回 第${nextData.id}回 ${nextData.date} [${nextData.author.name}](${nextData.author.url}) さん`);
     } catch (error) {
