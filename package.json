@@ -6,13 +6,13 @@
   "dependencies": {
     "forever": "^1.0.0",
     "fs-promise": "^1.0.0",
-    "github": "^8.1.0",
-    "hubot": "^3.1.1",
+    "github": "^8.2.1",
+    "hubot": "^3.3.2",
     "hubot-gitter2": "github:huafu/hubot-gitter2",
     "hubot-kokoro.io": "^2.1.0",
     "hubot-lingr": "github:thinca/hubot-lingr#split-message",
     "hubot-slack": "^4.7.1",
-    "hubot-vimhelp": "^1.2.1",
+    "hubot-vimhelp": "^1.2.2",
     "js-yaml": "^3.13.1",
     "mkdirp-promise": "^5.0.0",
     "node-fetch": "^1.7.3",
@@ -20,7 +20,7 @@
     "ssh-keygen2": "^0.1.0"
   },
   "devDependencies": {
-    "eslint": "^5.6.0"
+    "eslint": "^5.16.0"
   },
   "engines": {
     "node": ">=6.0.0"
