@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "author": "thinca <thinca@gmail.com>",
   "dependencies": {
-    "@octokit/rest": "^16.27.3",
+    "@octokit/rest": "^16.28.9",
     "forever": "^1.0.0",
     "fs-promise": "^1.0.0",
     "hubot": "^3.3.2",
@@ -12,7 +12,7 @@
     "hubot-kokoro.io": "^2.1.0",
     "hubot-lingr": "github:thinca/hubot-lingr#split-message",
     "hubot-slack": "^4.7.1",
-    "hubot-vimhelp": "^1.2.2",
+    "hubot-vimhelp": "^1.2.3",
     "js-yaml": "^3.13.1",
     "mkdirp-promise": "^5.0.0",
     "node-fetch": "^1.7.3",
