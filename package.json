@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "author": "thinca <thinca@gmail.com>",
   "dependencies": {
-    "@octokit/rest": "^16.34.1",
+    "@octokit/rest": "^16.36.0",
     "forever": "^2.0.0",
     "fs-extra": "^8.1.0",
     "hubot": "^3.3.2",
