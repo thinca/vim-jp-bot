@@ -5,7 +5,7 @@
   "author": "thinca <thinca@gmail.com>",
   "dependencies": {
     "@octokit/rest": "^16.34.1",
-    "forever": "^1.0.0",
+    "forever": "^2.0.0",
     "fs-extra": "^8.1.0",
     "hubot": "^3.3.2",
     "hubot-gitter2": "github:huafu/hubot-gitter2",
