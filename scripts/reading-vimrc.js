@@ -119,11 +119,9 @@ ${createSumaryMessage(data, vimrcs)}`;
 };
 
 const createSumaryMessage = (data, vimrcs) => {
-  return `今回読む vimrc: [${data.author.name}](${data.author.url}) さん:${
-    vimrcs.map((vimrc) => `
-[${vimrc.name}](${vimrc.url}) ([DL](${vimrc.raw_url}))`
-    ).join("")
-  }`;
+  const mdVimrcs = vimrcs.map((vimrc) => `
+[${vimrc.name}](${vimrc.url}) ([DL](${vimrc.raw_url}))`).join("");
+  return `今回読む vimrc: [${data.author.name}](${data.author.url}) さん:${mdVimrcs}`;
 };
 
 const generateResultData = async (readingVimrcRepos, readingVimrc) => {
@@ -237,7 +235,7 @@ module.exports = (robot) => {
       robot.logger.warning(
         "A non admin user tried to use an admin command: %s: %s",
         user.login || user.name,
-        context.response.message.text
+        context.response.message.text,
       );
       done();
       return;
