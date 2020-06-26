@@ -4,22 +4,22 @@
   "version": "0.0.0",
   "author": "thinca <thinca@gmail.com>",
   "dependencies": {
-    "@octokit/rest": "^17.9.2",
-    "forever": "^2.0.0",
-    "fs-extra": "^9.0.0",
+    "@octokit/rest": "^18.0.0",
+    "forever": "^3.0.0",
+    "fs-extra": "^9.0.1",
     "hubot": "^3.3.2",
     "hubot-gitter2": "github:huafu/hubot-gitter2",
     "hubot-kokoro.io": "^2.2.0",
     "hubot-lingr": "github:thinca/hubot-lingr#split-message",
     "hubot-slack": "^4.8.0",
     "hubot-vimhelp": "^2.0.0",
-    "js-yaml": "^3.13.1",
+    "js-yaml": "^3.14.0",
     "node-fetch": "^2.6.0",
     "printf": "^0.5.3",
     "ssh-keygen2": "^0.1.0"
   },
   "devDependencies": {
-    "eslint": "^7.0.0"
+    "eslint": "^7.3.1"
   },
   "engines": {
     "node": ">=6.0.0"
