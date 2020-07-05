@@ -1,11 +1,16 @@
-const {spawn} = require("child_process");
-const fse = require("fs-extra");
-const path = require("path");
+import {spawn, SpawnOptionsWithoutStdio} from "child_process";
+import * as fse from "fs-extra";
+import * as path from "path";
 
 const sshCommand = path.join(path.dirname(__dirname), "bin", "ssh");
 
-class GitRepositoryUpdater {
-  constructor(reposURL, workDir, keyFilePath, opts) {
+export class GitRepositoryUpdater {
+  reposURL: string;
+  workDir: string;
+  keyFilePath: string;
+  branch: string | undefined;
+
+  constructor(reposURL: string, workDir: string, keyFilePath: string, opts: {branch?: string}) {
     this.reposURL = reposURL;
     this.workDir = workDir;
     this.keyFilePath = keyFilePath;
@@ -13,14 +18,14 @@ class GitRepositoryUpdater {
     this.branch = opts.branch;
   }
 
-  async setup() {
+  async setup(): Promise<void> {
     const result = await this.setupWorkDir();
     if (!result.workDirCreated) {
       return await this.updateReposToLatest();
     }
   }
 
-  async setupWorkDir() {
+  async setupWorkDir(): Promise<{workDirCreated: boolean}> {
     if (await fse.pathExists(this.workDir)) {
       return {workDirCreated: false};
     }
@@ -33,7 +38,7 @@ class GitRepositoryUpdater {
     return {workDirCreated: true};
   }
 
-  async commitAndPush(message) {
+  async commitAndPush(message: string): Promise<string> {
     const git = this._execGit.bind(this);
     await git(["add", "."]);
     await git(["commit", "--message", message]);
@@ -42,16 +47,16 @@ class GitRepositoryUpdater {
     return message;
   }
 
-  async updateReposToLatest() {
+  async updateReposToLatest(): Promise<void> {
     const git = this._execGit.bind(this);
     await git(["fetch"]);
     const branch = this.branch || "master";
     await git(["reset", "--hard", `origin/${branch}`]);
   }
 
-  _execGit(args, clone = false) {
+  _execGit(args: string[], clone = false): Promise<boolean> {
     return new Promise((resolve, reject) => {
-      const opts = {
+      const opts: SpawnOptionsWithoutStdio = {
         env: Object.assign({
           GIT_SSH: sshCommand,
           SSH_KEY_PATH: this.keyFilePath,
@@ -86,5 +91,3 @@ class GitRepositoryUpdater {
     });
   }
 }
-
-module.exports = GitRepositoryUpdater;

@@ -1,11 +1,12 @@
-const fse = require("fs-extra");
-const fetch = require("node-fetch");
-const path = require("path");
-const YAML = require("js-yaml");
-const printf = require("printf");
-const {URL} = require("url");
-const GitRepositoryUpdater = require("./git_repository_updater");
-const GithubPublicKeyRegisterer = require("./github_public_key_registerer");
+import * as path from "path";
+import {URL} from "url";
+import * as fse from "fs-extra";
+import * as YAML from "js-yaml";
+import {default as fetch} from "node-fetch";
+import {default as printf} from "printf";
+import {ArchiveVimrc, NextVimrc, VimrcFile} from "./types";
+import {GitRepositoryUpdater} from "./git_repository_updater";
+import {GithubPublicKeyRegisterer} from "./github_public_key_registerer";
 
 const TEMPLATE_TEXT = `---
 layout: archive
@@ -16,7 +17,7 @@ category: archive
 {%% include archive.md %%}
 `;
 
-const nextWeek = (dateString) => {
+const nextWeek = (dateString: string): string => {
   const [year, month, day] = dateString.split(/\D+/).map((n) => Number.parseInt(n, 10));
   const date = new Date(Date.UTC(year, month - 1, day));
   date.setDate(date.getDate() + 7);
@@ -28,37 +29,74 @@ const nextWeek = (dateString) => {
   );
 };
 
-class ReadingVimrcRepos {
-  constructor(repository, baseWorkDir, githubAPIToken) {
+const makeRawURL = (urlString: string): string => {
+  const url = new URL(urlString);
+  url.hostname = "raw.githubusercontent.com";
+  const pathnames = url.pathname.split("/");
+  pathnames.splice(3, 1);
+  url.pathname = pathnames.join("/");
+  return url.toString();
+};
+
+const makeWikiRequestLine = (author: string, requester: string, urlString: string, lineNum: number, comment?: string) => {
+  return `${author} | ${lineNum} | ${requester} | ${comment || ""} | [リンク](${urlString})`;
+};
+
+const makeGithubURLInfo = (url: string): {vimrc: VimrcFile, author: {name: string, url: string}} => {
+  const paths = url.split("/");
+  // XXX: Assume GitHub URL
+  const hash = /^[0-9a-f]{40}$/.test(paths[6]) ? paths[6] : null;
+  return {
+    vimrc: {
+      url,
+      hash,
+      name: paths[paths.length - 1],
+    },
+    author: {
+      name: paths[3],
+      url: paths.slice(0, 4).join("/"),
+    },
+  };
+};
+
+
+export class ReadingVimrcRepos {
+  readonly repository: string;
+  readonly baseWorkDir: string;
+  readonly githubAPIToken: string;
+  siteUpdater: GitRepositoryUpdater | undefined;
+  wikiUpdater: GitRepositoryUpdater | undefined;
+
+  constructor(repository: string, baseWorkDir: string, githubAPIToken: string) {
     this.repository = repository;
     this.baseWorkDir = baseWorkDir;
     this.githubAPIToken = githubAPIToken;
   }
 
-  get nextYAMLFilePath() {
-    return path.join(this.siteUpdater.workDir, "_data", "next.yml");
+  get nextYAMLFilePath(): string {
+    return this.siteUpdater ? path.join(this.siteUpdater.workDir, "_data", "next.yml") : "";
   }
 
-  get archiveYAMLFilePath() {
-    return path.join(this.siteUpdater.workDir, "_data", "archives.yml");
+  get archiveYAMLFilePath(): string {
+    return this.siteUpdater ? path.join(this.siteUpdater.workDir, "_data", "archives.yml") : "";
   }
 
-  async readNextYAMLData() {
-    const text = await fse.readFile(this.nextYAMLFilePath);
-    return YAML.safeLoad(text)[0];
+  async readNextYAMLData(): Promise<NextVimrc> {
+    const text = await fse.readFile(this.nextYAMLFilePath, "utf8");
+    return (YAML.safeLoad(text) as NextVimrc[])[0];
   }
 
-  async readArchiveYAMLData() {
-    const text = await fse.readFile(this.archiveYAMLFilePath);
-    return YAML.safeLoad(text);
+  async readArchiveYAMLData(): Promise<ArchiveVimrc[]> {
+    const text = await fse.readFile(this.archiveYAMLFilePath, "utf8");
+    return YAML.safeLoad(text) as ArchiveVimrc[];
   }
 
-  async readTargetMembers() {
+  async readTargetMembers(): Promise<Set<string>> {
     const yaml = await this.readArchiveYAMLData();
     return new Set(yaml.map((entry) => entry.author.name));
   }
 
-  async setup() {
+  async setup(): Promise<void> {
     const keyDir = path.join(this.baseWorkDir, ".ssh");
     await fse.mkdirp(keyDir);
     const registerer = new GithubPublicKeyRegisterer(keyDir, this.githubAPIToken);
@@ -81,7 +119,10 @@ class ReadingVimrcRepos {
     await Promise.all([this.siteUpdater.setup(), this.wikiUpdater.setup()]);
   }
 
-  async finish(resultData) {
+  async finish(resultData: ArchiveVimrc): Promise<void> {
+    if (!this.siteUpdater) {
+      throw new Error("need setup");
+    }
     await this.siteUpdater.updateReposToLatest();
     await this._updateArchiveYAML(resultData);
     await this._addArchiveMarkdown(resultData.id);
@@ -89,7 +130,10 @@ class ReadingVimrcRepos {
     await this.removeWikiEntry(resultData);
   }
 
-  async next(nexts, resultData) {
+  async next(nexts: string[], resultData: ArchiveVimrc): Promise<NextVimrc> {
+    if (!this.siteUpdater) {
+      throw new Error("need setup");
+    }
     await this.siteUpdater.updateReposToLatest();
     const nextData = await this._updateNextYAML(nexts, resultData);
     const message = `Update the next information: #${nextData.id} ${nextData.author.name}`;
@@ -97,7 +141,10 @@ class ReadingVimrcRepos {
     return nextData;
   }
 
-  async addWikiEntry(requester, author, urlString, comment) {
+  async addWikiEntry(requester: string, author: string, urlString: string, comment?: string): Promise<boolean> {
+    if (!this.wikiUpdater) {
+      throw new Error("need setup");
+    }
     await this.wikiUpdater.updateReposToLatest();
     const needPush = await this._addNameToWikiFile(requester, author, urlString, comment);
     if (needPush) {
@@ -106,7 +153,10 @@ class ReadingVimrcRepos {
     return needPush;
   }
 
-  async removeWikiEntry(resultData) {
+  async removeWikiEntry(resultData: ArchiveVimrc): Promise<boolean> {
+    if (!this.wikiUpdater) {
+      throw new Error("need setup");
+    }
     const name = resultData.author.name;
     await this.wikiUpdater.updateReposToLatest();
     const needPush = await this._removeNameFromWikiFile(name);
@@ -116,7 +166,7 @@ class ReadingVimrcRepos {
     return needPush;
   }
 
-  async _addNameToWikiFile(requester, author, urlString, comment) {
+  async _addNameToWikiFile(requester: string, author: string, urlString: string, comment?: string): Promise<boolean> {
     const rawURL = makeRawURL(urlString);
     const res = await fetch(rawURL);
     const text = await res.text();
@@ -134,14 +184,17 @@ class ReadingVimrcRepos {
     });
   }
 
-  async _removeNameFromWikiFile(name) {
+  async _removeNameFromWikiFile(name: string): Promise<boolean> {
     return await this._updateRequestFile((lines) => {
       const namePat = new RegExp(`^${name}\\s*\\|`);
       return lines.filter((line) => !namePat.test(line));
     });
   }
 
-  async _updateRequestFile(callback) {
+  async _updateRequestFile(callback: (lines: string[]) => string[]): Promise<boolean> {
+    if (!this.wikiUpdater) {
+      throw new Error("need setup");
+    }
     const requestFile = path.join(this.wikiUpdater.workDir, "Request.md");
     const content = await fse.readFile(requestFile, "utf-8");
     const lines = content.split("\n");
@@ -156,35 +209,25 @@ class ReadingVimrcRepos {
     return true;
   }
 
-  _updateArchiveYAML(resultData) {
+  async _updateArchiveYAML(resultData: ArchiveVimrc): Promise<void> {
+    if (!this.siteUpdater) {
+      throw new Error("need setup");
+    }
     const yamlPath = path.join(this.siteUpdater.workDir, "_data", "archives.yml");
     const yamlEntry = YAML.safeDump([resultData], {lineWidth: 1000});
-    return fse.appendFile(yamlPath, yamlEntry);
+    await fse.appendFile(yamlPath, yamlEntry);
   }
 
-  _addArchiveMarkdown(id) {
+  async _addArchiveMarkdown(id: number): Promise<void> {
+    if (!this.siteUpdater) {
+      throw new Error("need setup");
+    }
     const archivePath = path.join(this.siteUpdater.workDir, "archive", printf("%03d.md", id));
     const archiveBody = printf(TEMPLATE_TEXT, id, id);
-    return fse.writeFile(archivePath, archiveBody);
+    await fse.writeFile(archivePath, archiveBody);
   }
 
-  makeGithubURLInfo(url) {
-    const paths = url.split("/");
-    // XXX: Assume GitHub URL
-    const hash = /^[0-9a-f]{40}$/.test(paths[6]) ? paths[6] : null;
-    return {
-      url,
-      hash,
-      name: paths[paths.length - 1],
-      author: {
-        name: paths[3],
-        url: paths.slice(0, 4).join("/"),
-      },
-    };
-  }
-
-  async _updateNextYAML(nexts, resultData) {
-    const yamlPath = this.nextYAMLFilePath;
+  async _updateNextYAML(nexts: string[], resultData: ArchiveVimrc): Promise<NextVimrc> {
     const urls = nexts.filter((next) => next.match(/^http/));
     const others = nexts.filter((next) => !next.match(/^http/));
     const part = others.find((o) => /^.+編$/.test(o)) || null;
@@ -197,43 +240,21 @@ class ReadingVimrcRepos {
     const nextVimrcURLs =
       isContinuous ? resultData.vimrcs.map((vimrc) => vimrc.url) : urls;
 
-    const nextVimrcData = nextVimrcURLs.map(this.makeGithubURLInfo);
+    const nextVimrcData = nextVimrcURLs.map(makeGithubURLInfo);
     const data = nextVimrcData[0];
 
-    const currentYaml = await fse.readFile(yamlPath);
-    const nextData = YAML.safeLoad(currentYaml)[0];
+    const nextData = await this.readNextYAMLData();
     const date = new Date(nextData.date);
     if (date.getTime() < Date.now()) {
       nextData.id++;
       nextData.date = nextWeek(nextData.date);
     }
     nextData.author = data.author;
-    const hash = isContinuous ? data.hash : null;
-    nextData.vimrcs = nextVimrcData.map((vimrc) => {
-      return {
-        url: vimrc.url,
-        name: vimrc.name,
-        hash: hash,
-      };
-    });
+    nextData.vimrcs = nextVimrcData.map((data) => data.vimrc);
     nextData.part = part;
 
+    const yamlPath = this.nextYAMLFilePath;
     await fse.writeFile(yamlPath, YAML.safeDump([nextData]));
     return nextData;
   }
 }
-
-const makeRawURL = (urlString) => {
-  const url = new URL(urlString);
-  url.hostname = "raw.githubusercontent.com";
-  const pathnames = url.pathname.split("/");
-  pathnames.splice(3, 1);
-  url.pathname = pathnames.join("/");
-  return url.toString();
-};
-
-const makeWikiRequestLine = (author, requester, urlString, lineNum, comment) => {
-  return `${author} | ${lineNum} | ${requester} | ${comment || ""} | [リンク](${urlString})`;
-};
-
-module.exports = ReadingVimrcRepos;

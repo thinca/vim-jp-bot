@@ -1,23 +1,34 @@
 ---
-extends: eslint:recommended
-parserOptions:
-  ecmaVersion: 8
 env:
   es6: true
   node: true
+extends:
+  - 'eslint:recommended'
+  - 'plugin:@typescript-eslint/eslint-recommended'
+  - 'plugin:@typescript-eslint/recommended'
+globals:
+  Atomics: readonly
+  SharedArrayBuffer: readonly
+parser: '@typescript-eslint/parser'
+parserOptions:
+  ecmaVersion: 2018
+  sourceType: module
+plugins:
+  - '@typescript-eslint'
 rules:
-  semi:
+  indent:
     - error
-    - always
-  prefer-const:
+    - 2
+    - SwitchCase: 1
+  linebreak-style:
     - error
+    - unix
   quotes:
     - error
     - double
-    - avoidEscape: true
-  comma-dangle:
+  semi:
     - error
-    - always-multiline
-  no-unused-vars:
+    - always
+  '@typescript-eslint/no-unused-vars':
     - error
-    - argsIgnorePattern: "^_"
+    - argsIgnorePattern: '^_'

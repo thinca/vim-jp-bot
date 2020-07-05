@@ -1,9 +1,13 @@
-const fse = require("fs-extra");
-const path = require("path");
-const {Octokit} = require("@octokit/rest");
-const keygen = require("ssh-keygen");
+import * as fse from "fs-extra";
+import * as path from "path";
+import {Octokit} from "@octokit/rest";
+import keygen = require("ssh-keygen");
 
-const generateKeyPair = (location) => {
+interface KeygenResult {
+  pubKey: string;
+}
+
+const generateKeyPair = (location: string): Promise<KeygenResult> => {
   const opts = {
     type: "rsa",
     size: 4096,
@@ -11,7 +15,7 @@ const generateKeyPair = (location) => {
     comment: "A key for auto deploy",
   };
   return new Promise((resolve, reject) => {
-    keygen(opts, (err, keypair) => {
+    keygen(opts, (err: unknown, keypair: KeygenResult) => {
       if (err) {
         reject(err);
       } else {
@@ -21,7 +25,7 @@ const generateKeyPair = (location) => {
   });
 };
 
-const addPublicKey = (githubAPIToken, publicKey) => {
+const addPublicKey = (githubAPIToken: string, publicKey: string) => {
   const octokit = new Octokit({
     auth: githubAPIToken,
   });
@@ -31,18 +35,22 @@ const addPublicKey = (githubAPIToken, publicKey) => {
   });
 };
 
-class GithubPublicKeyRegisterer {
-  constructor(keyDir, githubAPIToken, keyFileName = "bot_deploy_rsa") {
+export class GithubPublicKeyRegisterer {
+  readonly keyDir: string;
+  readonly githubAPIToken: string;
+  readonly keyFileName: string;
+
+  constructor(keyDir: string, githubAPIToken: string, keyFileName = "bot_deploy_rsa") {
     this.keyDir = keyDir;
     this.githubAPIToken = githubAPIToken;
     this.keyFileName = keyFileName;
   }
 
-  get keyPath() {
+  get keyPath(): string {
     return path.join(this.keyDir, this.keyFileName);
   }
 
-  async setup() {
+  async setup(): Promise<string> {
     const keyPath = this.keyPath;
     if (await fse.pathExists(keyPath)) {
       return keyPath;
@@ -52,5 +60,3 @@ class GithubPublicKeyRegisterer {
     return keyPath;
   }
 }
-
-module.exports = GithubPublicKeyRegisterer;
