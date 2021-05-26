@@ -4,31 +4,31 @@
   "version": "0.0.0",
   "author": "thinca <thinca@gmail.com>",
   "dependencies": {
-    "@octokit/rest": "^18.0.9",
-    "forever": "^3.0.2",
+    "@octokit/rest": "^18.5.3",
+    "forever": "^3.0.4",
     "hubot": "^3.3.2",
     "hubot-gitter2": "github:huafu/hubot-gitter2",
     "hubot-kokoro.io": "^2.2.0",
     "hubot-lingr": "github:thinca/hubot-lingr#split-message",
-    "hubot-slack": "^4.8.1",
-    "hubot-vimhelp": "^3.0.1",
+    "hubot-slack": "^4.9.0",
+    "hubot-vimhelp": "^3.0.2",
     "js-yaml": "^4.1.0",
     "node-fetch": "^2.6.1",
-    "printf": "^0.6.0",
+    "printf": "^0.6.1",
     "ssh-keygen": "^0.5.0"
   },
   "devDependencies": {
     "@types/hubot": "^3.3.0",
     "@types/js-yaml": "^4.0.1",
-    "@types/node": "^14.14.9",
+    "@types/node": "^15.6.1",
     "@types/node-fetch": "^2.5.10",
     "@types/printf": "^0.3.1",
-    "@typescript-eslint/eslint-plugin": "^4.8.1",
-    "@typescript-eslint/parser": "^4.8.1",
-    "eslint": "^7.13.0",
-    "eslint-plugin-import": "^2.22.1",
-    "ts-node": "^9.0.0",
-    "typescript": "^4.1.2"
+    "@typescript-eslint/eslint-plugin": "^4.25.0",
+    "@typescript-eslint/parser": "^4.25.0",
+    "eslint": "^7.27.0",
+    "eslint-plugin-import": "^2.23.3",
+    "ts-node": "^10.0.0",
+    "typescript": "^4.2.4"
   },
   "engines": {
     "node": ">=6.0.0"

@@ -5,9 +5,9 @@
 // Dependencies:
 //   js-yaml: 4.1.0
 //   node-fetch: 2.6.1
-//   printf: 0.2.3
+//   printf: 0.6.1
 //   ssh-keygen: 0.5.0
-//   @octokit/rest: 18.0.9
+//   @octokit/rest: 18.5.3
 //
 // Configuration:
 //   HUBOT_READING_VIMRC_ENABLE
