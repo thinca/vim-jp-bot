@@ -50,8 +50,8 @@
 import * as path from "path";
 import {URL} from "url";
 import * as hubot from "hubot";
-import {default as fetch} from "node-fetch";
-import {default as printf} from "printf";
+import fetch from "node-fetch";
+import printf from "printf";
 
 import {ArchiveVimrc, NextVimrc, VimrcFile} from "../lib/types";
 import {ReadingVimrcProgressor} from "../lib/reading_vimrc_progressor";
