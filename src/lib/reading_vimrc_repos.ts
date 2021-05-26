@@ -1,6 +1,6 @@
 import * as path from "path";
 import {URL} from "url";
-import * as fse from "fs-extra";
+import * as fs from "fs/promises";
 import * as YAML from "js-yaml";
 import {default as fetch} from "node-fetch";
 import {default as printf} from "printf";
@@ -82,12 +82,12 @@ export class ReadingVimrcRepos {
   }
 
   async readNextYAMLData(): Promise<NextVimrc> {
-    const text = await fse.readFile(this.nextYAMLFilePath, "utf8");
+    const text = await fs.readFile(this.nextYAMLFilePath, "utf-8");
     return (YAML.load(text) as NextVimrc[])[0];
   }
 
   async readArchiveYAMLData(): Promise<ArchiveVimrc[]> {
-    const text = await fse.readFile(this.archiveYAMLFilePath, "utf8");
+    const text = await fs.readFile(this.archiveYAMLFilePath, "utf-8");
     return YAML.load(text) as ArchiveVimrc[];
   }
 
@@ -98,7 +98,7 @@ export class ReadingVimrcRepos {
 
   async setup(): Promise<void> {
     const keyDir = path.join(this.baseWorkDir, ".ssh");
-    await fse.mkdirp(keyDir);
+    await fs.mkdir(keyDir, {recursive: true});
     const registerer = new GithubPublicKeyRegisterer(keyDir, this.githubAPIToken);
     const keyFilePath = await registerer.setup();
 
@@ -196,7 +196,7 @@ export class ReadingVimrcRepos {
       throw new Error("need setup");
     }
     const requestFile = path.join(this.wikiUpdater.workDir, "Request.md");
-    const content = await fse.readFile(requestFile, "utf-8");
+    const content = await fs.readFile(requestFile, "utf-8");
     const lines = content.split("\n");
     const origLength = lines.length;
     const newLines = callback(lines);
@@ -205,7 +205,7 @@ export class ReadingVimrcRepos {
     if (origLength === newLines.length) {
       return false;
     }
-    await fse.writeFile(requestFile, newLines.join("\n"));
+    await fs.writeFile(requestFile, newLines.join("\n"));
     return true;
   }
 
@@ -215,7 +215,7 @@ export class ReadingVimrcRepos {
     }
     const yamlPath = path.join(this.siteUpdater.workDir, "_data", "archives.yml");
     const yamlEntry = YAML.dump([resultData], {lineWidth: 1000});
-    await fse.appendFile(yamlPath, yamlEntry);
+    await fs.appendFile(yamlPath, yamlEntry);
   }
 
   async _addArchiveMarkdown(id: number): Promise<void> {
@@ -224,7 +224,7 @@ export class ReadingVimrcRepos {
     }
     const archivePath = path.join(this.siteUpdater.workDir, "archive", printf("%03d.md", id));
     const archiveBody = printf(TEMPLATE_TEXT, id, id);
-    await fse.writeFile(archivePath, archiveBody);
+    await fs.writeFile(archivePath, archiveBody);
   }
 
   async _updateNextYAML(nexts: string[], resultData: ArchiveVimrc): Promise<NextVimrc> {
@@ -254,7 +254,7 @@ export class ReadingVimrcRepos {
     nextData.part = part;
 
     const yamlPath = this.nextYAMLFilePath;
-    await fse.writeFile(yamlPath, YAML.dump([nextData]));
+    await fs.writeFile(yamlPath, YAML.dump([nextData]));
     return nextData;
   }
 }

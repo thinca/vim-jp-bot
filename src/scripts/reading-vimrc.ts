@@ -7,7 +7,6 @@
 //   node-fetch: 2.6.1
 //   printf: 0.2.3
 //   ssh-keygen: 0.5.0
-//   fs-extra: 9.0.1
 //   @octokit/rest: 18.0.9
 //
 // Configuration:

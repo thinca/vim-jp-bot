@@ -1,5 +1,5 @@
 import {spawn, SpawnOptionsWithoutStdio} from "child_process";
-import * as fse from "fs-extra";
+import * as fs from "fs";
 import * as path from "path";
 
 const sshCommand = path.join(path.dirname(__dirname), "bin", "ssh");
@@ -26,7 +26,7 @@ export class GitRepositoryUpdater {
   }
 
   async setupWorkDir(): Promise<{workDirCreated: boolean}> {
-    if (await fse.pathExists(this.workDir)) {
+    if (fs.existsSync(this.workDir)) {
       return {workDirCreated: false};
     }
     const args = ["clone", this.reposURL, this.workDir];

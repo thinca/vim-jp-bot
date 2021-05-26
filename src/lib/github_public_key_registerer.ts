@@ -1,4 +1,4 @@
-import * as fse from "fs-extra";
+import * as fs from "fs";
 import * as path from "path";
 import {Octokit} from "@octokit/rest";
 import keygen = require("ssh-keygen");
@@ -52,7 +52,7 @@ export class GithubPublicKeyRegisterer {
 
   async setup(): Promise<string> {
     const keyPath = this.keyPath;
-    if (await fse.pathExists(keyPath)) {
+    if (fs.existsSync(keyPath)) {
       return keyPath;
     }
     const keypair = await generateKeyPair(keyPath);
