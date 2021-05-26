@@ -3,7 +3,7 @@
 //   https://vim-jp.org/reading-vimrc/
 //
 // Dependencies:
-//   js-yaml: 3.6.0
+//   js-yaml: 4.1.0
 //   node-fetch: 2.6.1
 //   printf: 0.2.3
 //   ssh-keygen: 0.5.0

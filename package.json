@@ -13,7 +13,7 @@
     "hubot-lingr": "github:thinca/hubot-lingr#split-message",
     "hubot-slack": "^4.8.1",
     "hubot-vimhelp": "^3.0.1",
-    "js-yaml": "^3.14.0",
+    "js-yaml": "^4.1.0",
     "node-fetch": "^2.6.1",
     "printf": "^0.6.0",
     "ssh-keygen": "^0.5.0"
@@ -21,7 +21,7 @@
   "devDependencies": {
     "@types/fs-extra": "^9.0.4",
     "@types/hubot": "^3.3.0",
-    "@types/js-yaml": "^3.12.5",
+    "@types/js-yaml": "^4.0.1",
     "@types/node": "^14.14.9",
     "@types/node-fetch": "^2.5.10",
     "@types/printf": "^0.3.1",

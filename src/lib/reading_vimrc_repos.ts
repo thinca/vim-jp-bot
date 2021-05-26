@@ -83,12 +83,12 @@ export class ReadingVimrcRepos {
 
   async readNextYAMLData(): Promise<NextVimrc> {
     const text = await fse.readFile(this.nextYAMLFilePath, "utf8");
-    return (YAML.safeLoad(text) as NextVimrc[])[0];
+    return (YAML.load(text) as NextVimrc[])[0];
   }
 
   async readArchiveYAMLData(): Promise<ArchiveVimrc[]> {
     const text = await fse.readFile(this.archiveYAMLFilePath, "utf8");
-    return YAML.safeLoad(text) as ArchiveVimrc[];
+    return YAML.load(text) as ArchiveVimrc[];
   }
 
   async readTargetMembers(): Promise<Set<string>> {
@@ -214,7 +214,7 @@ export class ReadingVimrcRepos {
       throw new Error("need setup");
     }
     const yamlPath = path.join(this.siteUpdater.workDir, "_data", "archives.yml");
-    const yamlEntry = YAML.safeDump([resultData], {lineWidth: 1000});
+    const yamlEntry = YAML.dump([resultData], {lineWidth: 1000});
     await fse.appendFile(yamlPath, yamlEntry);
   }
 
@@ -254,7 +254,7 @@ export class ReadingVimrcRepos {
     nextData.part = part;
 
     const yamlPath = this.nextYAMLFilePath;
-    await fse.writeFile(yamlPath, YAML.safeDump([nextData]));
+    await fse.writeFile(yamlPath, YAML.dump([nextData]));
     return nextData;
   }
 }
