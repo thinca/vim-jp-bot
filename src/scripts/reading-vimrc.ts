@@ -29,6 +29,7 @@
 //   HUBOT_READING_VIMRC_GITHUB_API_TOKEN
 //     GitHub API token to register ssh key to GitHub.
 //     write:public_key scope is needed.
+//     This is also used for fetching the latest commit hash.
 //   HUBOT_READING_VIMRC_GITTER_ACTIVITY_HOOK_URL
 //     URL to update gitter activity.
 //
@@ -50,7 +51,7 @@
 import * as path from "path";
 import {URL} from "url";
 import * as hubot from "hubot";
-import fetch from "node-fetch";
+import {default as fetch, HeadersInit} from "node-fetch";
 import printf from "printf";
 
 import {ArchiveVimrc, NextVimrc, VimrcFile} from "../lib/types";
@@ -68,6 +69,7 @@ export = (() => {
   const ADMIN_USERS = (process.env.HUBOT_READING_VIMRC_ADMIN_USERS || "").split(/,/);
   const HOMEPAGE_BASE = process.env.HUBOT_READING_VIMRC_HOMEPAGE || "https://vim-jp.org/reading-vimrc/";
   const GITTER_HOOK = process.env.HUBOT_READING_VIMRC_GITTER_ACTIVITY_HOOK_URL;
+  const GITHUB_API_TOKEN = process.env.HUBOT_READING_VIMRC_GITHUB_API_TOKEN;
 
   const REQUEST_PAGE = "https://github.com/vim-jp/reading-vimrc/wiki/Request";
 
@@ -152,7 +154,10 @@ help          : 使い方を出力`;
         return cached;
       }
       const apiURL = `https://api.github.com/repos/${place}/commits/HEAD`;
-      const headers = {"Accept": "application/vnd.github.VERSION.sha"};
+      const headers: HeadersInit = {"Accept": "application/vnd.github.VERSION.sha"};
+      if (GITHUB_API_TOKEN) {
+        headers["Authorization"] = `token ${GITHUB_API_TOKEN}`;
+      }
       const res = await fetch(apiURL, {headers});
       if (!res.ok) {
         throw new Error(`GET ${apiURL} was failed:${res.status}`);
@@ -216,11 +221,10 @@ help          : 使い方を出力`;
     (async () => {
       const githubRepos = process.env.HUBOT_READING_VIMRC_GITHUB_REPOS;
       const workDir = process.env.HUBOT_READING_VIMRC_WORK_DIR;
-      const apiToken = process.env.HUBOT_READING_VIMRC_GITHUB_API_TOKEN;
-      if (!githubRepos || !workDir || !apiToken) {
+      if (!githubRepos || !workDir || !GITHUB_API_TOKEN) {
         return;
       }
-      const repos = new ReadingVimrcRepos(githubRepos, workDir, apiToken);
+      const repos = new ReadingVimrcRepos(githubRepos, workDir, GITHUB_API_TOKEN);
       try {
         await repos.setup();
         readingVimrcRepos = repos;
