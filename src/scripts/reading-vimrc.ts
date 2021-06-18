@@ -122,6 +122,10 @@ help          : 使い方を出力`;
   ${createSumaryMessage(data, vimrcs)}`;
   };
 
+  const splitMessage = (message: string): string[] => {
+    return [...message.matchAll(/[^]{1,4096}(?:\n|$)/g)].map(([part]) => part.trimEnd());
+  };
+
   const createActivityMessage = (data: NextVimrc, vimrcs: VimrcFile[]): string => {
     return `=== 第${data.id}回 vimrc読書会 ===
   ${createSumaryMessage(data, vimrcs)}`;
@@ -335,7 +339,7 @@ help          : 使い方を出力`;
           robot.logger.error(`Fetch vimrc failed: ${response.status}: ${vimrc.raw_url}`);
         }
       });
-      res.send(createStartingMessage(nextData, vimrcs));
+      splitMessage(createStartingMessage(nextData, vimrcs)).forEach((mes) => res.send(mes));
       if (GITTER_HOOK) {
         const activity = createActivityMessage(nextData, vimrcs);
         const data = JSON.stringify({message: activity});
