@@ -9,7 +9,6 @@
     "hubot": "^3.3.2",
     "hubot-gitter2": "github:huafu/hubot-gitter2",
     "hubot-kokoro.io": "^2.2.0",
-    "hubot-lingr": "github:thinca/hubot-lingr#split-message",
     "hubot-slack": "^4.9.0",
     "hubot-vimhelp": "^3.0.2",
     "js-yaml": "^4.1.0",
