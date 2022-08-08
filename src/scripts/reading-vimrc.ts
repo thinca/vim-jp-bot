@@ -6,7 +6,6 @@
 //   js-yaml: 4.1.0
 //   node-fetch: 2.6.1
 //   printf: 0.6.1
-//   ssh-keygen: 0.5.0
 //   @octokit/rest: 18.5.3
 //
 // Configuration:
@@ -26,8 +25,10 @@
 //   HUBOT_READING_VIMRC_WORK_DIR
 //     Working directory.
 //     This script can update the reading vimrc sites on GitHub Pages.
+//   HUBOT_READING_VIMRC_GITHUB_USER
+//     GitHub User ID to manipulate the reading-vimrc repository.
 //   HUBOT_READING_VIMRC_GITHUB_API_TOKEN
-//     GitHub API token to register ssh key to GitHub.
+//     GitHub API token to access to GitHub.
 //     write:public_key scope is needed.
 //     This is also used for fetching the latest commit hash.
 //   HUBOT_READING_VIMRC_GITTER_ACTIVITY_HOOK_URL
@@ -225,10 +226,11 @@ help          : 使い方を出力`;
     (async () => {
       const githubRepos = process.env.HUBOT_READING_VIMRC_GITHUB_REPOS;
       const workDir = process.env.HUBOT_READING_VIMRC_WORK_DIR;
-      if (!githubRepos || !workDir || !GITHUB_API_TOKEN) {
+      const githubUser = process.env.HUBOT_READING_VIMRC_GITHUB_USER;
+      if (!githubRepos || !workDir || !githubUser || !GITHUB_API_TOKEN) {
         return;
       }
-      const repos = new ReadingVimrcRepos(githubRepos, workDir, GITHUB_API_TOKEN);
+      const repos = new ReadingVimrcRepos(githubRepos, workDir, githubUser, GITHUB_API_TOKEN);
       try {
         await repos.setup();
         readingVimrcRepos = repos;

@@ -1,3 +1,0 @@
-#!/bin/bash
-
-exec ssh -i "${SSH_KEY_PATH}" -o "StrictHostKeyChecking=no" $*

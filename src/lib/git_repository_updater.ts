@@ -1,19 +1,14 @@
 import {spawn, SpawnOptionsWithoutStdio} from "child_process";
 import * as fs from "fs";
-import * as path from "path";
-
-const sshCommand = path.join(path.dirname(__dirname), "bin", "ssh");
 
 export class GitRepositoryUpdater {
   reposURL: string;
   workDir: string;
-  keyFilePath: string;
   branch: string | undefined;
 
-  constructor(reposURL: string, workDir: string, keyFilePath: string, opts: {branch?: string}) {
+  constructor(reposURL: string, workDir: string, opts: {branch?: string}) {
     this.reposURL = reposURL;
     this.workDir = workDir;
-    this.keyFilePath = keyFilePath;
     opts = opts || {};
     this.branch = opts.branch;
   }
@@ -57,10 +52,7 @@ export class GitRepositoryUpdater {
   _execGit(args: string[], clone = false): Promise<boolean> {
     return new Promise((resolve, reject) => {
       const opts: SpawnOptionsWithoutStdio = {
-        env: Object.assign({
-          GIT_SSH: sshCommand,
-          SSH_KEY_PATH: this.keyFilePath,
-        }, process.env),
+        env: Object.assign({}, process.env),
       };
       if (!clone) {
         opts.cwd = this.workDir;

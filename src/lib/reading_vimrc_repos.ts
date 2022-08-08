@@ -6,7 +6,6 @@ import fetch from "node-fetch";
 import printf from "printf";
 import {ArchiveVimrc, NextVimrc, VimrcFile} from "./types";
 import {GitRepositoryUpdater} from "./git_repository_updater";
-import {GithubPublicKeyRegisterer} from "./github_public_key_registerer";
 
 const TEMPLATE_TEXT = `---
 layout: archive
@@ -63,13 +62,15 @@ const makeGithubURLInfo = (url: string): {vimrc: VimrcFile, author: {name: strin
 export class ReadingVimrcRepos {
   readonly repository: string;
   readonly baseWorkDir: string;
+  readonly githubUser: string;
   readonly githubAPIToken: string;
   siteUpdater: GitRepositoryUpdater | undefined;
   wikiUpdater: GitRepositoryUpdater | undefined;
 
-  constructor(repository: string, baseWorkDir: string, githubAPIToken: string) {
+  constructor(repository: string, baseWorkDir: string, githubUser: string, githubAPIToken: string) {
     this.repository = repository;
     this.baseWorkDir = baseWorkDir;
+    this.githubUser = githubUser;
     this.githubAPIToken = githubAPIToken;
   }
 
@@ -97,23 +98,18 @@ export class ReadingVimrcRepos {
   }
 
   async setup(): Promise<void> {
-    const keyDir = path.join(this.baseWorkDir, ".ssh");
-    await fs.mkdir(keyDir, {recursive: true});
-    const registerer = new GithubPublicKeyRegisterer(keyDir, this.githubAPIToken);
-    const keyFilePath = await registerer.setup();
-
     {
-      const reposURL = `git@github.com:${this.repository}`;
+      const reposURL = `https://${this.githubUser}:${this.githubAPIToken}@github.com/${this.repository}`;
       const workDir = path.join(this.baseWorkDir, "gh-pages");
       const opts = {branch: "gh-pages"};
-      this.siteUpdater = new GitRepositoryUpdater(reposURL, workDir, keyFilePath, opts);
+      this.siteUpdater = new GitRepositoryUpdater(reposURL, workDir, opts);
     }
 
     {
-      const reposURL = `git@github.com:${this.repository}.wiki`;
+      const reposURL = `https://${this.githubUser}:${this.githubAPIToken}@github.com/${this.repository}.wiki`;
       const workDir = path.join(this.baseWorkDir, "wiki");
       const opts = {branch: "master"};
-      this.wikiUpdater = new GitRepositoryUpdater(reposURL, workDir, keyFilePath, opts);
+      this.wikiUpdater = new GitRepositoryUpdater(reposURL, workDir, opts);
     }
 
     await Promise.all([this.siteUpdater.setup(), this.wikiUpdater.setup()]);
