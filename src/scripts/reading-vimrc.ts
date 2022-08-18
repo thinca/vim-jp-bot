@@ -4,9 +4,9 @@
 //
 // Dependencies:
 //   js-yaml: 4.1.0
-//   node-fetch: 2.6.1
+//   node-fetch: 3.2.10
 //   printf: 0.6.1
-//   @octokit/rest: 18.5.3
+//   @octokit/rest: 19.0.4
 //
 // Configuration:
 //   HUBOT_READING_VIMRC_ENABLE
@@ -381,7 +381,6 @@ help          : 使い方を出力`;
           res.send(`アーカイブページを更新しました: [第${id}回](${url})`);
         } catch (error) {
           res.send(`ERROR: ${error}`);
-          res.send(error);
           robot.logger.error("Error occurred while updating a result:", error);
         }
       }
