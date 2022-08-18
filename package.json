@@ -5,7 +5,6 @@
   "author": "thinca <thinca@gmail.com>",
   "dependencies": {
     "@octokit/rest": "^18.5.3",
-    "forever": "^3.0.4",
     "hubot": "^3.3.2",
     "hubot-gitter2": "github:huafu/hubot-gitter2",
     "hubot-kokoro.io": "^2.2.0",
