@@ -186,7 +186,7 @@ help          : 使い方を出力`;
   };
 
   const PLUGIN_REPO_PATTERN =
-    /^\s*(?:"\s*)?(?:Plug(?:in)?|NeoBundle\w*|call\s+(?:dein|minpac)#add\()\s*['"]([^'"]+)/gm;
+    /^\s*(?:"\s*)?(?:Plug(?:in)?|NeoBundle\w*|Jetpack|call\s+(?:dein|minpac|jetpack)#add\()\s*['"]([^'"]+)/gm;
   const extractPluginURLs = (text: string): {repo: string, url: string}[] => {
     const repos = [];
     let result;
