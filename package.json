@@ -6,7 +6,6 @@
   "dependencies": {
     "@octokit/rest": "^19.0.5",
     "hubot": "^3.3.2",
-    "hubot-gitter2": "github:huafu/hubot-gitter2",
     "hubot-kokoro.io": "^2.2.0",
     "hubot-slack": "^4.10.0",
     "hubot-vimhelp": "^4.0.0",
