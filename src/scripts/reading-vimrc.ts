@@ -31,8 +31,6 @@
 //     GitHub API token to access to GitHub.
 //     write:public_key scope is needed.
 //     This is also used for fetching the latest commit hash.
-//   HUBOT_READING_VIMRC_GITTER_ACTIVITY_HOOK_URL
-//     URL to update gitter activity.
 //
 // Commands:
 //   !reading_vimrc start - Start the reading vimrc.  Admin only.
@@ -66,10 +64,9 @@ export = (() => {
     };
   }
 
-  const ROOM_NAME = process.env.HUBOT_READING_VIMRC_ROOM_NAME || "vim-jp/reading-vimrc";
+  const ROOM_NAME = process.env.HUBOT_READING_VIMRC_ROOM_NAME;
   const ADMIN_USERS = (process.env.HUBOT_READING_VIMRC_ADMIN_USERS || "").split(/,/);
   const HOMEPAGE_BASE = process.env.HUBOT_READING_VIMRC_HOMEPAGE || "https://vim-jp.org/reading-vimrc/";
-  const GITTER_HOOK = process.env.HUBOT_READING_VIMRC_GITTER_ACTIVITY_HOOK_URL;
   const GITHUB_API_TOKEN = process.env.HUBOT_READING_VIMRC_GITHUB_API_TOKEN;
 
   const REQUEST_PAGE = "https://github.com/vim-jp/reading-vimrc/wiki/Request";
@@ -127,11 +124,6 @@ help          : 使い方を出力`;
     return [...message.matchAll(/[^]{1,4096}(?:\n|$)/g)].map(([part]) => part.trimEnd());
   };
 
-  const createActivityMessage = (data: NextVimrc, vimrcs: VimrcFile[]): string => {
-    return `=== 第${data.id}回 vimrc読書会 ===
-  ${createSumaryMessage(data, vimrcs)}`;
-  };
-
   const createSumaryMessage = (data: NextVimrc, vimrcs: VimrcFile[]): string => {
     const mdVimrcs = vimrcs.map((vimrc) => `
   [${vimrc.name}](${vimrc.url}) ([DL](${vimrc.raw_url}))`).join("");
@@ -173,8 +165,8 @@ help          : 使い方を出力`;
     };
   })();
 
-  const makeGitterURL = (roomName: string, message: hubot.Message): string => {
-    return `https://gitter.im/${roomName}?at=${message.id}`;
+  const makeMatrixURL = (message: hubot.Message): string => {
+    return `https://matrix.to/#/${message.room}/${message.id}`;
   };
 
   const getUsername = (user: hubot.User): string => {
@@ -241,14 +233,6 @@ help          : 使い方を出力`;
     })();
 
     const progressor = new ReadingVimrcProgressor();
-    let targetRoomId = "Shell";  // for shell adapter on debug
-    if (robot.adapterName === "gitter2") {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (<any>robot.adapter)._resolveRoom(ROOM_NAME, (room: any) => {
-        targetRoomId = room.id();
-        robot.logger.info("targetRoomId updated: ", targetRoomId, ROOM_NAME);
-      });
-    }
 
     robot.listenerMiddleware((context, next, done) => {
       if (!context.response) {
@@ -260,7 +244,7 @@ help          : 使い方を出力`;
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const options: ListenerOptions = (<any>context).listener.options;
 
-      if (options.readingVimrc && room !== targetRoomId) {
+      if (options.readingVimrc && room !== ROOM_NAME) {
         done();
         return;
       }
@@ -325,7 +309,7 @@ help          : 使い方を出力`;
     });
     robot.hear(/^!reading_vimrc[\s]+start$/i, {readingVimrc: true, admin: true}, async (res: hubot.Response) => {
       const nextData = await readingVimrcRepos.readNextYAMLData();
-      const logURL = makeGitterURL(ROOM_NAME, res.envelope.message);
+      const logURL = makeMatrixURL(res.envelope.message);
       const vimrcs = await Promise.all(nextData.vimrcs.map(toFixedVimrc));
       progressor.start(nextData.id, logURL, vimrcs, nextData.part);
       vimrcs.forEach(async (vimrc) => {
@@ -342,28 +326,6 @@ help          : 使い方を出力`;
         }
       });
       splitMessage(createStartingMessage(nextData, vimrcs)).forEach((mes) => res.send(mes));
-      if (GITTER_HOOK) {
-        const activity = createActivityMessage(nextData, vimrcs);
-        const data = JSON.stringify({message: activity});
-        const options = {
-          method: "POST",
-          headers: {"Content-Type": "application/json"},
-          body: data,
-        };
-        robot.logger.info("Update Gitter Activity:", GITTER_HOOK);
-        robot.logger.info("POST DATA:", data);
-        try {
-          const response = await fetch(GITTER_HOOK, options);
-          const responseBody = await response.text();
-          if (response.ok) {
-            robot.logger.info("POST activity succeeded:", responseBody);
-          } else {
-            robot.logger.error("POST activity failed:", response.status, responseBody);
-          }
-        } catch (err) {
-          robot.logger.error("POST activity failed:", err);
-        }
-      }
     });
     robot.hear(/^!reading_vimrc\s+stop$/, {readingVimrc: true, admin: true}, async (res: hubot.Response) => {
       progressor.stop();
