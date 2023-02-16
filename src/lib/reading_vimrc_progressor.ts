@@ -29,7 +29,7 @@ export class ReadingVimrcProgressor {
   }
 
   get members(): string[] {
-    return [...new Set(this.messages.map((mes) => mes.user.login as string)).values()].filter((m) => m);
+    return [...new Set(this.messages.map((mes) => mes.user.name)).values()].filter((m) => m);
   }
 
   start(id: number, logURL: string, vimrcs: VimrcFile[], part: string | null): void {
