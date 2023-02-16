@@ -7,6 +7,7 @@
     "@octokit/rest": "^19.0.5",
     "hubot": "^3.3.2",
     "hubot-kokoro.io": "^2.2.0",
+    "hubot-matrix": "github:thinca/hubot-matrix#set-displayName-to-user-in-message",
     "hubot-slack": "^4.10.0",
     "hubot-vimhelp": "^4.0.0",
     "js-yaml": "^4.1.0",
