@@ -175,7 +175,7 @@ help          : 使い方を出力`;
   };
 
   const isAdmin = (user: hubot.User): boolean => {
-    return ADMIN_USERS.includes(getUsername(user));
+    return ADMIN_USERS.includes(user.id);
   };
 
   const PLUGIN_REPO_PATTERN =
