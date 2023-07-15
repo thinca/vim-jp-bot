@@ -42,6 +42,7 @@
 //   !reading_vimrc member_with_count - List of members with said count.
 //   !reading_vimrc next {vimrc} ... - Update next vimrc.
 //   !reading_vimrc request[!] {vimrc} - Add a vimrc to request page.
+//   !reading_vimrc role - Show your role.
 //   !reading_vimrc help - Show the help.
 //
 // Author:
@@ -437,6 +438,10 @@ help          : 使い方を出力`;
       } else {
         await update();
       }
+    });
+    robot.hear(/^!reading_vimrc\s+role/, {readingVimrc: true}, async (res: hubot.Response) => {
+      const role = isAdmin(res.message.user) ? "admin" : "member";
+      res.send(role);
     });
     robot.hear(/^!reading_vimrc\s+help/, {readingVimrc: true}, (res: hubot.Response) => {
       res.send(helpMessage);
