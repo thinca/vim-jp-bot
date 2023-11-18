@@ -58,6 +58,34 @@ const makeGithubURLInfo = (url: string): {vimrc: VimrcFile, author: {name: strin
   };
 };
 
+const extractCommonPath = (urls: string[]): string => {
+  const firstPathParts = urls[0].split("/");
+  const lastPathParts = urls.at(-1)?.split("/");
+  if (lastPathParts == null) {
+    return "";
+  }
+  const commonPathParts = [];
+  for (let i = 0; i < firstPathParts.length; i++) {
+    if (firstPathParts[i] === lastPathParts[i]) {
+      commonPathParts.push(firstPathParts[i]);
+    } else {
+      // Append tailing "/"
+      commonPathParts.push("");
+      break;
+    }
+  }
+  return commonPathParts.join("/");
+};
+
+const refineName = (vimrcs: VimrcFile[]) => {
+  const urls = vimrcs.map((vimrc) => vimrc.url).sort();
+  const commonPath = extractCommonPath(urls);
+  const commonLen = commonPath.length;
+  vimrcs.forEach((vimrc) => {
+    vimrc.name = vimrc.url.slice(commonLen);
+  });
+};
+
 
 export class ReadingVimrcRepos {
   readonly repository: string;
@@ -247,6 +275,7 @@ export class ReadingVimrcRepos {
     }
     nextData.author = data.author;
     nextData.vimrcs = nextVimrcData.map((data) => data.vimrc);
+    refineName(nextData.vimrcs);
     nextData.part = part;
 
     const yamlPath = this.nextYAMLFilePath;
