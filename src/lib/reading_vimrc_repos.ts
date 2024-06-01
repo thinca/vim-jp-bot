@@ -78,6 +78,9 @@ const extractCommonPath = (urls: string[]): string => {
 };
 
 const refineName = (vimrcs: VimrcFile[]) => {
+  if (vimrcs.length === 1) {
+    return;
+  }
   const urls = vimrcs.map((vimrc) => vimrc.url).sort();
   const commonPath = extractCommonPath(urls);
   const commonLen = commonPath.length;
