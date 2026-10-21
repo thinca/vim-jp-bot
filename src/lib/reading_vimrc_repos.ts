@@ -5,7 +5,7 @@ import fetch from "node-fetch";
 import printf from "printf";
 import {ArchiveVimrc, NextVimrc, VimrcFile} from "./types";
 import {GitRepositoryUpdater} from "./git_repository_updater";
-import {makeRawURL, parseVimrcURL} from "./hosts";
+import {createVimrcHosts, VimrcHosts} from "./hosts";
 
 const TEMPLATE_TEXT = `---
 layout: archive
@@ -69,6 +69,7 @@ export class ReadingVimrcRepos {
   readonly baseWorkDir: string;
   readonly githubUser: string;
   readonly githubAPIToken: string;
+  readonly hosts: VimrcHosts;
   siteUpdater: GitRepositoryUpdater | undefined;
   wikiUpdater: GitRepositoryUpdater | undefined;
 
@@ -77,6 +78,7 @@ export class ReadingVimrcRepos {
     this.baseWorkDir = baseWorkDir;
     this.githubUser = githubUser;
     this.githubAPIToken = githubAPIToken;
+    this.hosts = createVimrcHosts({fetch, token: githubAPIToken});
   }
 
   get nextYAMLFilePath(): string {
@@ -168,7 +170,7 @@ export class ReadingVimrcRepos {
   }
 
   async _addNameToWikiFile(requester: string, author: string, urlString: string, comment?: string): Promise<boolean> {
-    const rawURL = makeRawURL(urlString);
+    const rawURL = this.hosts.makeRawURL(urlString);
     const res = await fetch(rawURL);
     const text = await res.text();
     const lineNum = text.split("\n").length;
@@ -241,7 +243,7 @@ export class ReadingVimrcRepos {
     const nextVimrcURLs =
       isContinuous ? resultData.vimrcs.map((vimrc) => vimrc.url) : urls;
 
-    const nextVimrcData = nextVimrcURLs.map(parseVimrcURL);
+    const nextVimrcData = nextVimrcURLs.map(this.hosts.parseVimrcURL);
     const data = nextVimrcData[0];
 
     const nextData = await this.readNextYAMLData();

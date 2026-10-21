@@ -1,16 +1,9 @@
 import {URL} from "url";
 import type {Fetch, VimrcFile} from "../types";
+import type {VimrcHost, VimrcURLInfo} from "./types";
 
-const parseGitHubURL = (urlString: string): URL => {
+const makeRawURL = (urlString: string): string => {
   const url = new URL(urlString);
-  if (url.hostname !== "github.com") {
-    throw new Error(`Unsupported host: ${url.hostname}`);
-  }
-  return url;
-};
-
-export const makeRawURL = (urlString: string): string => {
-  const url = parseGitHubURL(urlString);
   url.hostname = "raw.githubusercontent.com";
   const pathnames = url.pathname.split("/");
   pathnames.splice(3, 1);
@@ -18,8 +11,7 @@ export const makeRawURL = (urlString: string): string => {
   return url.toString();
 };
 
-export const makeGithubURLInfo = (url: string): {vimrc: VimrcFile, author: {name: string, url: string}} => {
-  parseGitHubURL(url);
+const parseURL = (url: string): VimrcURLInfo => {
   const paths = url.split("/");
   const hash = /^[0-9a-f]{40}$/.test(paths[6]) ? paths[6] : null;
   return {
@@ -36,10 +28,11 @@ export const makeGithubURLInfo = (url: string): {vimrc: VimrcFile, author: {name
 };
 
 /**
- * Creates GitHub operations that need network access.
- * The latest commit hash is cached per repository for the lifetime of the returned object.
+ * Creates the GitHub host.
+ * The latest commit hash is cached per repository for the lifetime of the returned host.
+ * @param token GitHub API token, which raises the rate limit of the API.
  */
-export const createGitHub = ({fetch, token}: {fetch: Fetch, token?: string}) => {
+export const createGitHubHost = ({fetch, token}: {fetch: Fetch, token?: string}): VimrcHost => {
   const lastCommitHash = (() => {
     // XXX: Should cache expire?
     const hashes = new Map<string, string>();
@@ -75,5 +68,5 @@ export const createGitHub = ({fetch, token}: {fetch: Fetch, token?: string}) => 
     return {name: vimrc.name, url, raw_url, hash};
   };
 
-  return {lastCommitHash, toFixedVimrc};
+  return {hostname: "github.com", parseURL, makeRawURL, toFixedVimrc};
 };
