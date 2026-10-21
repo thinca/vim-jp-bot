@@ -1,6 +1,7 @@
 import {URL} from "url";
 import type {Fetch, VimrcFile} from "../types";
 import {createGitHubHost} from "./github";
+import {createCodebergHost} from "./codeberg";
 import type {VimrcHost, VimrcURLInfo} from "./types";
 
 /**
@@ -11,6 +12,7 @@ import type {VimrcHost, VimrcURLInfo} from "./types";
 export const createVimrcHosts = ({fetch, token}: {fetch: Fetch, token?: string}) => {
   const hosts: VimrcHost[] = [
     createGitHubHost({fetch, token}),
+    createCodebergHost(),
   ];
   const findHost = (url: string): VimrcHost => {
     const {hostname} = new URL(url);
