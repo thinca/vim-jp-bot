@@ -3,6 +3,9 @@ import type {Fetch, VimrcFile} from "../types";
 
 export const makeRawURL = (urlString: string): string => {
   const url = new URL(urlString);
+  if (url.hostname !== "github.com") {
+    throw new Error(`Unsupported host: ${url.hostname}`);
+  }
   url.hostname = "raw.githubusercontent.com";
   const pathnames = url.pathname.split("/");
   pathnames.splice(3, 1);
