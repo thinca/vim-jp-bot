@@ -1,11 +1,11 @@
 import * as path from "path";
-import {URL} from "url";
 import * as fs from "fs/promises";
 import * as YAML from "js-yaml";
 import fetch from "node-fetch";
 import printf from "printf";
 import {ArchiveVimrc, NextVimrc, VimrcFile} from "./types";
 import {GitRepositoryUpdater} from "./git_repository_updater";
+import {makeGithubURLInfo, makeRawURL} from "./hosts/github";
 
 const TEMPLATE_TEXT = `---
 layout: archive
@@ -28,34 +28,8 @@ const nextWeek = (dateString: string): string => {
   );
 };
 
-const makeRawURL = (urlString: string): string => {
-  const url = new URL(urlString);
-  url.hostname = "raw.githubusercontent.com";
-  const pathnames = url.pathname.split("/");
-  pathnames.splice(3, 1);
-  url.pathname = pathnames.join("/");
-  return url.toString();
-};
-
 const makeWikiRequestLine = (author: string, requester: string, urlString: string, lineNum: number, comment?: string) => {
   return `${author} | ${lineNum} | ${requester} | ${comment || ""} | [リンク](${urlString})`;
-};
-
-const makeGithubURLInfo = (url: string): {vimrc: VimrcFile, author: {name: string, url: string}} => {
-  const paths = url.split("/");
-  // XXX: Assume GitHub URL
-  const hash = /^[0-9a-f]{40}$/.test(paths[6]) ? paths[6] : null;
-  return {
-    vimrc: {
-      url,
-      hash,
-      name: paths[paths.length - 1],
-    },
-    author: {
-      name: paths[3],
-      url: paths.slice(0, 4).join("/"),
-    },
-  };
 };
 
 const extractCommonPath = (urls: string[]): string => {

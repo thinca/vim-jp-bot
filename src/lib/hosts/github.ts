@@ -1,0 +1,79 @@
+import {URL} from "url";
+import {VimrcFile} from "../types";
+
+export interface FetchResponse {
+  ok: boolean;
+  status: number;
+  text(): Promise<string>;
+}
+
+export type Fetch = (url: string, init?: {headers: Record<string, string>}) => Promise<FetchResponse>;
+
+export const makeRawURL = (urlString: string): string => {
+  const url = new URL(urlString);
+  url.hostname = "raw.githubusercontent.com";
+  const pathnames = url.pathname.split("/");
+  pathnames.splice(3, 1);
+  url.pathname = pathnames.join("/");
+  return url.toString();
+};
+
+export const makeGithubURLInfo = (url: string): {vimrc: VimrcFile, author: {name: string, url: string}} => {
+  const paths = url.split("/");
+  // XXX: Assume GitHub URL
+  const hash = /^[0-9a-f]{40}$/.test(paths[6]) ? paths[6] : null;
+  return {
+    vimrc: {
+      url,
+      hash,
+      name: paths[paths.length - 1],
+    },
+    author: {
+      name: paths[3],
+      url: paths.slice(0, 4).join("/"),
+    },
+  };
+};
+
+/**
+ * Creates GitHub operations that need network access.
+ * The latest commit hash is cached per repository for the lifetime of the returned object.
+ */
+export const createGitHub = ({fetch, token}: {fetch: Fetch, token?: string}) => {
+  const lastCommitHash = (() => {
+    // XXX: Should cache expire?
+    const hashes = new Map<string, string>();
+    return async (url: string): Promise<string> => {
+      const [, place] = url.match(/https:\/\/github\.com\/([^/]+\/[^/]+)/) || [];
+      // XXX Should `hashes` lock? How?
+      const cached = hashes.get(place);
+      if (cached) {
+        return cached;
+      }
+      const apiURL = `https://api.github.com/repos/${place}/commits/HEAD`;
+      const headers: Record<string, string> = {"Accept": "application/vnd.github.VERSION.sha"};
+      if (token) {
+        headers["Authorization"] = `token ${token}`;
+      }
+      const res = await fetch(apiURL, {headers});
+      if (!res.ok) {
+        throw new Error(`GET ${apiURL} was failed:${res.status}`);
+      }
+      const version = await res.text();
+      hashes.set(place, version);
+      return version;
+    };
+  })();
+
+  const toFixedVimrc = async (vimrc: VimrcFile): Promise<VimrcFile> => {
+    const hash = vimrc.hash || await lastCommitHash(vimrc.url);
+    vimrc.hash = hash;
+    const url = vimrc.url.replace(/blob\/\w+\//, `blob/${hash}/`);
+    const raw_url = vimrc.url
+      .replace(/https:\/\/github/, "https://raw.githubusercontent")
+      .replace(/blob\/[^/]+\//, `${hash}/`);
+    return {name: vimrc.name, url, raw_url, hash};
+  };
+
+  return {lastCommitHash, toFixedVimrc};
+};
