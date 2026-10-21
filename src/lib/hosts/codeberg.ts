@@ -30,10 +30,23 @@ export const createCodebergHost = (): VimrcHost => {
   const unsupported = (vimrcURL: string): never => {
     throw new Error(`Not supported yet: ${vimrcURL}`);
   };
+  const toFixedVimrc = async (vimrc: VimrcFile): Promise<VimrcFile> => {
+    const hash = vimrc.hash;
+    if (!hash) {
+      return unsupported(vimrc.url);
+    }
+    const {origin, owner, repo, filePath} = parseCodebergURL(vimrc.url);
+    return {
+      name: vimrc.name,
+      url: `${origin}/${owner}/${repo}/src/commit/${hash}/${filePath}`,
+      raw_url: `${origin}/${owner}/${repo}/raw/commit/${hash}/${filePath}`,
+      hash,
+    };
+  };
   return {
     hostname: "codeberg.org",
     parseURL,
     makeRawURL: unsupported,
-    toFixedVimrc: async (vimrc: VimrcFile) => unsupported(vimrc.url),
+    toFixedVimrc,
   };
 };
