@@ -1,11 +1,16 @@
 import {URL} from "url";
 import type {Fetch, VimrcFile} from "../types";
 
-export const makeRawURL = (urlString: string): string => {
+const parseGitHubURL = (urlString: string): URL => {
   const url = new URL(urlString);
   if (url.hostname !== "github.com") {
     throw new Error(`Unsupported host: ${url.hostname}`);
   }
+  return url;
+};
+
+export const makeRawURL = (urlString: string): string => {
+  const url = parseGitHubURL(urlString);
   url.hostname = "raw.githubusercontent.com";
   const pathnames = url.pathname.split("/");
   pathnames.splice(3, 1);
@@ -14,10 +19,7 @@ export const makeRawURL = (urlString: string): string => {
 };
 
 export const makeGithubURLInfo = (url: string): {vimrc: VimrcFile, author: {name: string, url: string}} => {
-  const {hostname} = new URL(url);
-  if (hostname !== "github.com") {
-    throw new Error(`Unsupported host: ${hostname}`);
-  }
+  parseGitHubURL(url);
   const paths = url.split("/");
   const hash = /^[0-9a-f]{40}$/.test(paths[6]) ? paths[6] : null;
   return {
