@@ -1,5 +1,5 @@
 import {URL} from "url";
-import {VimrcFile} from "../types";
+import type {Fetch, VimrcFile} from "../types";
 import type {VimrcHost, VimrcURLInfo} from "./types";
 
 const parseCodebergURL = (urlString: string) => {
@@ -26,16 +26,23 @@ const parseURL = (url: string): VimrcURLInfo => {
 /**
  * Creates the codeberg.org host.
  */
-export const createCodebergHost = (): VimrcHost => {
+export const createCodebergHost = ({fetch}: {fetch: Fetch}): VimrcHost => {
   const unsupported = (vimrcURL: string): never => {
     throw new Error(`Not supported yet: ${vimrcURL}`);
   };
-  const toFixedVimrc = async (vimrc: VimrcFile): Promise<VimrcFile> => {
-    const hash = vimrc.hash;
-    if (!hash) {
-      return unsupported(vimrc.url);
+  // stat, verification, and files are turned off because the API computes them for every listed commit.
+  const lastCommitHash = async (origin: string, owner: string, repo: string): Promise<string> => {
+    const apiURL = `${origin}/api/v1/repos/${owner}/${repo}/commits?limit=1&stat=false&verification=false&files=false`;
+    const res = await fetch(apiURL);
+    if (!res.ok) {
+      throw new Error(`GET ${apiURL} was failed:${res.status}`);
     }
+    const [commit] = JSON.parse(await res.text()) as {sha: string}[];
+    return commit.sha;
+  };
+  const toFixedVimrc = async (vimrc: VimrcFile): Promise<VimrcFile> => {
     const {origin, owner, repo, filePath} = parseCodebergURL(vimrc.url);
+    const hash = vimrc.hash || await lastCommitHash(origin, owner, repo);
     return {
       name: vimrc.name,
       url: `${origin}/${owner}/${repo}/src/commit/${hash}/${filePath}`,
