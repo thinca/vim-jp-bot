@@ -23,13 +23,15 @@ const parseURL = (url: string): VimrcURLInfo => {
   };
 };
 
+const makeRawURL = (url: string): string => {
+  const {origin, owner, repo, refKind, ref, filePath} = parseCodebergURL(url);
+  return `${origin}/${owner}/${repo}/raw/${refKind}/${ref}/${filePath}`;
+};
+
 /**
  * Creates the codeberg.org host.
  */
 export const createCodebergHost = ({fetch}: {fetch: Fetch}): VimrcHost => {
-  const unsupported = (vimrcURL: string): never => {
-    throw new Error(`Not supported yet: ${vimrcURL}`);
-  };
   // stat, verification, and files are turned off because the API computes them for every listed commit.
   const lastCommitHash = async (origin: string, owner: string, repo: string): Promise<string> => {
     const apiURL = `${origin}/api/v1/repos/${owner}/${repo}/commits?limit=1&stat=false&verification=false&files=false`;
@@ -53,7 +55,7 @@ export const createCodebergHost = ({fetch}: {fetch: Fetch}): VimrcHost => {
   return {
     hostname: "codeberg.org",
     parseURL,
-    makeRawURL: unsupported,
+    makeRawURL,
     toFixedVimrc,
   };
 };
