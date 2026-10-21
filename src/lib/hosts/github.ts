@@ -19,8 +19,11 @@ export const makeRawURL = (urlString: string): string => {
 };
 
 export const makeGithubURLInfo = (url: string): {vimrc: VimrcFile, author: {name: string, url: string}} => {
+  const {hostname} = new URL(url);
+  if (hostname !== "github.com") {
+    throw new Error(`Unsupported host: ${hostname}`);
+  }
   const paths = url.split("/");
-  // XXX: Assume GitHub URL
   const hash = /^[0-9a-f]{40}$/.test(paths[6]) ? paths[6] : null;
   return {
     vimrc: {
