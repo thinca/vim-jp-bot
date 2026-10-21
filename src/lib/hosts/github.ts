@@ -1,13 +1,5 @@
 import {URL} from "url";
-import {VimrcFile} from "../types";
-
-export interface FetchResponse {
-  ok: boolean;
-  status: number;
-  text(): Promise<string>;
-}
-
-export type Fetch = (url: string, init?: {headers: Record<string, string>}) => Promise<FetchResponse>;
+import type {Fetch, VimrcFile} from "../types";
 
 export const makeRawURL = (urlString: string): string => {
   const url = new URL(urlString);

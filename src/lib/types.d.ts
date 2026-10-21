@@ -1,3 +1,11 @@
+export interface FetchResponse {
+  ok: boolean;
+  status: number;
+  text(): Promise<string>;
+}
+
+export type Fetch = (url: string, init?: {headers: Record<string, string>}) => Promise<FetchResponse>;
+
 export interface VimrcFile {
   url: string;
   raw_url?: string;
