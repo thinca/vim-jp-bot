@@ -5,7 +5,7 @@ import fetch from "node-fetch";
 import printf from "printf";
 import {ArchiveVimrc, NextVimrc, VimrcFile} from "./types";
 import {GitRepositoryUpdater} from "./git_repository_updater";
-import {makeGithubURLInfo, makeRawURL} from "./hosts/github";
+import {makeRawURL, parseVimrcURL} from "./hosts";
 
 const TEMPLATE_TEXT = `---
 layout: archive
@@ -241,7 +241,7 @@ export class ReadingVimrcRepos {
     const nextVimrcURLs =
       isContinuous ? resultData.vimrcs.map((vimrc) => vimrc.url) : urls;
 
-    const nextVimrcData = nextVimrcURLs.map(makeGithubURLInfo);
+    const nextVimrcData = nextVimrcURLs.map(parseVimrcURL);
     const data = nextVimrcData[0];
 
     const nextData = await this.readNextYAMLData();

@@ -57,7 +57,7 @@ import printf from "printf";
 import {ArchiveVimrc, NextVimrc, VimrcFile} from "../lib/types";
 import {ReadingVimrcProgressor} from "../lib/reading_vimrc_progressor";
 import {ReadingVimrcRepos} from "../lib/reading_vimrc_repos";
-import {createGitHub} from "../lib/hosts/github";
+import {createVimrcHosts} from "../lib/hosts";
 
 export = (() => {
   if (!process.env.HUBOT_READING_VIMRC_ENABLE) {
@@ -142,7 +142,7 @@ help          : 使い方を出力`;
     return nextData;
   };
 
-  const github = createGitHub({fetch, token: GITHUB_API_TOKEN});
+  const hosts = createVimrcHosts({fetch, token: GITHUB_API_TOKEN});
 
   const makeMatrixURL = (message: hubot.Message): string => {
     return `https://matrix.to/#/${message.room}/${message.id}`;
@@ -279,7 +279,7 @@ help          : 使い方を出力`;
     robot.hear(/^!reading_vimrc[\s]+start$/i, {readingVimrc: true, admin: true}, async (res: hubot.Response) => {
       const nextData = await readingVimrcRepos.readNextYAMLData();
       const logURL = makeMatrixURL(res.envelope.message);
-      const vimrcs = await Promise.all(nextData.vimrcs.map(github.toFixedVimrc));
+      const vimrcs = await Promise.all(nextData.vimrcs.map(hosts.toFixedVimrc));
       progressor.start(nextData.id, logURL, vimrcs, nextData.part);
       vimrcs.forEach(async (vimrc) => {
         if (!vimrc.raw_url) {
