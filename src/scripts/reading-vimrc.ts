@@ -51,12 +51,13 @@
 import * as path from "path";
 import {URL} from "url";
 import * as hubot from "hubot";
-import {default as fetch, HeadersInit} from "node-fetch";
+import fetch from "node-fetch";
 import printf from "printf";
 
 import {ArchiveVimrc, NextVimrc, VimrcFile} from "../lib/types";
 import {ReadingVimrcProgressor} from "../lib/reading_vimrc_progressor";
 import {ReadingVimrcRepos} from "../lib/reading_vimrc_repos";
+import {createVimrcHosts} from "../lib/hosts";
 
 export = (() => {
   if (!process.env.HUBOT_READING_VIMRC_ENABLE) {
@@ -141,30 +142,7 @@ help          : 使い方を出力`;
     return nextData;
   };
 
-  const lastCommitHash = (() => {
-    // XXX: Should cache expire?
-    const hashes = new Map<string, string>();
-    return async (url: string): Promise<string> => {
-      const [, place] = url.match(/https:\/\/github\.com\/([^/]+\/[^/]+)/) || [];
-      // XXX Should `hashes` lock? How?
-      const cached = hashes.get(place);
-      if (cached) {
-        return cached;
-      }
-      const apiURL = `https://api.github.com/repos/${place}/commits/HEAD`;
-      const headers: HeadersInit = {"Accept": "application/vnd.github.VERSION.sha"};
-      if (GITHUB_API_TOKEN) {
-        headers["Authorization"] = `token ${GITHUB_API_TOKEN}`;
-      }
-      const res = await fetch(apiURL, {headers});
-      if (!res.ok) {
-        throw new Error(`GET ${apiURL} was failed:${res.status}`);
-      }
-      const version = await res.text();
-      hashes.set(place, version);
-      return version;
-    };
-  })();
+  const hosts = createVimrcHosts({fetch, token: GITHUB_API_TOKEN});
 
   const makeMatrixURL = (message: hubot.Message): string => {
     return `https://matrix.to/#/${message.room}/${message.id}`;
@@ -205,16 +183,6 @@ help          : 使い方を出力`;
   }
 
   return (robot: hubot.Robot) => {
-    const toFixedVimrc = async (vimrc: VimrcFile): Promise<VimrcFile> => {
-      const hash = vimrc.hash || await lastCommitHash(vimrc.url);
-      vimrc.hash = hash;
-      const url = vimrc.url.replace(/blob\/\w+\//, `blob/${hash}/`);
-      const raw_url = vimrc.url
-        .replace(/https:\/\/github/, "https://raw.githubusercontent")
-        .replace(/blob\/[^/]+\//, `${hash}/`);
-      return {name: vimrc.name, url, raw_url, hash};
-    };
-
     let readingVimrcRepos: ReadingVimrcRepos;
     (async () => {
       const githubRepos = process.env.HUBOT_READING_VIMRC_GITHUB_REPOS;
@@ -223,7 +191,7 @@ help          : 使い方を出力`;
       if (!githubRepos || !workDir || !githubUser || !GITHUB_API_TOKEN) {
         return;
       }
-      const repos = new ReadingVimrcRepos(githubRepos, workDir, githubUser, GITHUB_API_TOKEN);
+      const repos = new ReadingVimrcRepos(githubRepos, workDir, githubUser, GITHUB_API_TOKEN, hosts);
       try {
         await repos.setup();
         readingVimrcRepos = repos;
@@ -311,7 +279,7 @@ help          : 使い方を出力`;
     robot.hear(/^!reading_vimrc[\s]+start$/i, {readingVimrc: true, admin: true}, async (res: hubot.Response) => {
       const nextData = await readingVimrcRepos.readNextYAMLData();
       const logURL = makeMatrixURL(res.envelope.message);
-      const vimrcs = await Promise.all(nextData.vimrcs.map(toFixedVimrc));
+      const vimrcs = await Promise.all(nextData.vimrcs.map(hosts.toFixedVimrc));
       progressor.start(nextData.id, logURL, vimrcs, nextData.part);
       vimrcs.forEach(async (vimrc) => {
         if (!vimrc.raw_url) {

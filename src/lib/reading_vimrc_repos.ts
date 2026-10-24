@@ -1,11 +1,11 @@
 import * as path from "path";
-import {URL} from "url";
 import * as fs from "fs/promises";
 import * as YAML from "js-yaml";
 import fetch from "node-fetch";
 import printf from "printf";
 import {ArchiveVimrc, NextVimrc, VimrcFile} from "./types";
 import {GitRepositoryUpdater} from "./git_repository_updater";
+import type {VimrcHosts} from "./hosts";
 
 const TEMPLATE_TEXT = `---
 layout: archive
@@ -28,34 +28,8 @@ const nextWeek = (dateString: string): string => {
   );
 };
 
-const makeRawURL = (urlString: string): string => {
-  const url = new URL(urlString);
-  url.hostname = "raw.githubusercontent.com";
-  const pathnames = url.pathname.split("/");
-  pathnames.splice(3, 1);
-  url.pathname = pathnames.join("/");
-  return url.toString();
-};
-
 const makeWikiRequestLine = (author: string, requester: string, urlString: string, lineNum: number, comment?: string) => {
   return `${author} | ${lineNum} | ${requester} | ${comment || ""} | [リンク](${urlString})`;
-};
-
-const makeGithubURLInfo = (url: string): {vimrc: VimrcFile, author: {name: string, url: string}} => {
-  const paths = url.split("/");
-  // XXX: Assume GitHub URL
-  const hash = /^[0-9a-f]{40}$/.test(paths[6]) ? paths[6] : null;
-  return {
-    vimrc: {
-      url,
-      hash,
-      name: paths[paths.length - 1],
-    },
-    author: {
-      name: paths[3],
-      url: paths.slice(0, 4).join("/"),
-    },
-  };
 };
 
 const extractCommonPath = (urls: string[]): string => {
@@ -95,14 +69,16 @@ export class ReadingVimrcRepos {
   readonly baseWorkDir: string;
   readonly githubUser: string;
   readonly githubAPIToken: string;
+  readonly hosts: VimrcHosts;
   siteUpdater: GitRepositoryUpdater | undefined;
   wikiUpdater: GitRepositoryUpdater | undefined;
 
-  constructor(repository: string, baseWorkDir: string, githubUser: string, githubAPIToken: string) {
+  constructor(repository: string, baseWorkDir: string, githubUser: string, githubAPIToken: string, hosts: VimrcHosts) {
     this.repository = repository;
     this.baseWorkDir = baseWorkDir;
     this.githubUser = githubUser;
     this.githubAPIToken = githubAPIToken;
+    this.hosts = hosts;
   }
 
   get nextYAMLFilePath(): string {
@@ -194,7 +170,7 @@ export class ReadingVimrcRepos {
   }
 
   async _addNameToWikiFile(requester: string, author: string, urlString: string, comment?: string): Promise<boolean> {
-    const rawURL = makeRawURL(urlString);
+    const rawURL = this.hosts.makeRawURL(urlString);
     const res = await fetch(rawURL);
     const text = await res.text();
     const lineNum = text.split("\n").length;
@@ -267,7 +243,7 @@ export class ReadingVimrcRepos {
     const nextVimrcURLs =
       isContinuous ? resultData.vimrcs.map((vimrc) => vimrc.url) : urls;
 
-    const nextVimrcData = nextVimrcURLs.map(makeGithubURLInfo);
+    const nextVimrcData = nextVimrcURLs.map(this.hosts.parseVimrcURL);
     const data = nextVimrcData[0];
 
     const nextData = await this.readNextYAMLData();
