@@ -1,5 +1,6 @@
 import {URL} from "url";
 import type {Fetch, VimrcFile} from "../types";
+import {fetchText} from "../fetch_text";
 import type {VimrcHost, VimrcURLInfo} from "./types";
 
 const parseCodebergURL = (urlString: string) => {
@@ -35,11 +36,7 @@ export const createCodebergHost = ({fetch}: {fetch: Fetch}): VimrcHost => {
   // stat, verification, and files are turned off because the API computes them for every listed commit.
   const lastCommitHash = async (origin: string, owner: string, repo: string): Promise<string> => {
     const apiURL = `${origin}/api/v1/repos/${owner}/${repo}/commits?limit=1&stat=false&verification=false&files=false`;
-    const res = await fetch(apiURL);
-    if (!res.ok) {
-      throw new Error(`GET ${apiURL} was failed:${res.status}`);
-    }
-    const [commit] = JSON.parse(await res.text()) as {sha: string}[];
+    const [commit] = JSON.parse(await fetchText(fetch, apiURL)) as {sha: string}[];
     return commit.sha;
   };
   const toFixedVimrc = async (vimrc: VimrcFile): Promise<VimrcFile> => {

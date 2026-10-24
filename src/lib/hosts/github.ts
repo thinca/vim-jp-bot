@@ -1,5 +1,6 @@
 import {URL} from "url";
 import type {Fetch, VimrcFile} from "../types";
+import {fetchText} from "../fetch_text";
 import type {VimrcHost, VimrcURLInfo} from "./types";
 
 const makeRawURL = (urlString: string): string => {
@@ -48,11 +49,7 @@ export const createGitHubHost = ({fetch, token}: {fetch: Fetch, token?: string})
       if (token) {
         headers["Authorization"] = `token ${token}`;
       }
-      const res = await fetch(apiURL, {headers});
-      if (!res.ok) {
-        throw new Error(`GET ${apiURL} was failed:${res.status}`);
-      }
-      const version = await res.text();
+      const version = await fetchText(fetch, apiURL, {headers});
       hashes.set(place, version);
       return version;
     };
