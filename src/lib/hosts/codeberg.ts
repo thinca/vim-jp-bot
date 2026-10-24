@@ -42,12 +42,8 @@ export const createCodebergHost = ({fetch}: {fetch: Fetch}): VimrcHost => {
   const toFixedVimrc = async (vimrc: VimrcFile): Promise<VimrcFile> => {
     const {origin, owner, repo, filePath} = parseCodebergURL(vimrc.url);
     const hash = vimrc.hash || await lastCommitHash(origin, owner, repo);
-    return {
-      name: vimrc.name,
-      url: `${origin}/${owner}/${repo}/src/commit/${hash}/${filePath}`,
-      raw_url: `${origin}/${owner}/${repo}/raw/commit/${hash}/${filePath}`,
-      hash,
-    };
+    const url = `${origin}/${owner}/${repo}/src/commit/${hash}/${filePath}`;
+    return {name: vimrc.name, url, raw_url: makeRawURL(url), hash};
   };
   return {
     hostname: "codeberg.org",
