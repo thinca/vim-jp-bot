@@ -191,7 +191,7 @@ help          : 使い方を出力`;
       if (!githubRepos || !workDir || !githubUser || !GITHUB_API_TOKEN) {
         return;
       }
-      const repos = new ReadingVimrcRepos(githubRepos, workDir, githubUser, GITHUB_API_TOKEN);
+      const repos = new ReadingVimrcRepos(githubRepos, workDir, githubUser, GITHUB_API_TOKEN, hosts);
       try {
         await repos.setup();
         readingVimrcRepos = repos;

@@ -5,7 +5,7 @@ import fetch from "node-fetch";
 import printf from "printf";
 import {ArchiveVimrc, NextVimrc, VimrcFile} from "./types";
 import {GitRepositoryUpdater} from "./git_repository_updater";
-import {createVimrcHosts, VimrcHosts} from "./hosts";
+import type {VimrcHosts} from "./hosts";
 
 const TEMPLATE_TEXT = `---
 layout: archive
@@ -73,12 +73,12 @@ export class ReadingVimrcRepos {
   siteUpdater: GitRepositoryUpdater | undefined;
   wikiUpdater: GitRepositoryUpdater | undefined;
 
-  constructor(repository: string, baseWorkDir: string, githubUser: string, githubAPIToken: string) {
+  constructor(repository: string, baseWorkDir: string, githubUser: string, githubAPIToken: string, hosts: VimrcHosts) {
     this.repository = repository;
     this.baseWorkDir = baseWorkDir;
     this.githubUser = githubUser;
     this.githubAPIToken = githubAPIToken;
-    this.hosts = createVimrcHosts({fetch, token: githubAPIToken});
+    this.hosts = hosts;
   }
 
   get nextYAMLFilePath(): string {
